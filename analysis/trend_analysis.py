@@ -9,6 +9,8 @@ from typing import List, Dict, Tuple, Optional
 from dataclasses import dataclass
 from collections import Counter, defaultdict
 
+from analysis.stats_utils import mann_kendall_test
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -126,20 +128,29 @@ class TrendAnalyzer:
                 for year in years
             ]
 
-        # Detect emerging keywords (keywords with increasing trend)
-        emerging = []
-        if len(years) >= 2:
-            mid_point = len(years) // 2
-            for keyword in top_keywords:
-                early_count = sum(keyword_by_year[keyword].get(y, 0) for y in years[:mid_point])
-                late_count = sum(keyword_by_year[keyword].get(y, 0) for y in years[mid_point:])
+        # Detect emerging keywords using Mann-Kendall trend test
+        growth_rates = []
+        for keyword in top_keywords:
+            if len(keyword_by_year[keyword]) >= 3:  # Mann-Kendall needs at least 3 data points
+                # Convert to {year: count} format
+                yearly_counts = {int(y): c for y, c in keyword_by_year[keyword].items()}
 
-                if early_count > 0:
-                    growth_rate = (late_count - early_count) / early_count
-                    if growth_rate > 0.5:  # More than 50% growth
-                        emerging.append((keyword, growth_rate))
+                # Mann-Kendall trend test
+                mk_result = mann_kendall_test(yearly_counts)
 
-        emerging.sort(key=lambda x: x[1], reverse=True)
+                if mk_result['significant'] and mk_result['trend'] == 'increasing':
+                    growth_rates.append({
+                        'word': keyword,
+                        'growth_rate': mk_result['sens_slope'],  # Use Sen's slope
+                        'p_value': mk_result['p_value'],
+                        'trend': mk_result['trend']
+                    })
+
+        # Sort by growth rate
+        growth_rates.sort(key=lambda x: x['growth_rate'], reverse=True)
+
+        # Format for return
+        emerging = [(item['word'], item['growth_rate']) for item in growth_rates]
 
         return {
             'years': years,
@@ -373,6 +384,7 @@ def generate_trend_report(papers: List, conference_name: str) -> TrendReport:
         yearly_counts=dict(yearly_counts),
         domain_distribution=dict(domain_counts),
         top_keywords=keyword_data.get('keyword_total', {}),
+        emerging_keywords=keyword_data.get('emerging_keywords', []),
     )
 
 
