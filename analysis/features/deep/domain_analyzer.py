@@ -18,6 +18,8 @@ import numpy as np
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
+
+from analysis.data.vocabulary import STOPWORDS as VOCABULARY_STOPWORDS, SYNONYMS, normalize_word
 logger = logging.getLogger(__name__)
 
 
@@ -606,69 +608,8 @@ class DeepDomainAnalyzer:
         """Extract top keywords from papers."""
         word_counts = Counter()
 
-        # Comprehensive stopwords - including:
-        # 1. English common words
-        # 2. Generic research paper words
-        # 3. Auxiliary verbs and pronouns
-        # 4. Quantifiers and determiners
-        stopwords = {
-            # Basic English stopwords
-            'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
-            'of', 'with', 'by', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
-            'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
-            'should', 'may', 'might', 'must', 'can', 'this', 'that', 'these', 'those',
-            'i', 'we', 'they', 'he', 'she', 'it', 'my', 'our', 'their', 'its', 'from',
-            'as', 'into', 'through', 'during', 'before', 'after', 'above', 'below',
-            'between', 'under', 'again', 'further', 'then', 'once', 'here', 'there',
-            'when', 'where', 'why', 'how', 'all', 'each', 'few', 'more', 'most',
-            'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same',
-            'so', 'than', 'too', 'very', 'just', 'also', 'now', 'even', 'still',
-            'both', 'either', 'neither', 'another', 'much', 'many', 'any', 'about',
-            'like', 'get', 'got', 'go', 'going', 'went', 'gone', 'come', 'came',
-            'make', 'made', 'take', 'took', 'taken', 'see', 'saw', 'seen', 'know',
-            'knew', 'known', 'think', 'thought', 'want', 'use', 'used', 'using',
-            'find', 'found', 'give', 'gave', 'given', 'tell', 'told', 'seem',
-            'leave', 'put', 'keep', 'kept', 'let', 'begin', 'began', 'begun',
-            'appear', 'said', 'say', 'says', 'one', 'two', 'three', 'four', 'five',
-
-            # Generic research paper words (not informative)
-            'paper', 'approach', 'method', 'methods', 'system', 'systems', 'result',
-            'results', 'work', 'works', 'propose', 'proposed', 'show', 'shows',
-            'shown', 'demonstrate', 'demonstrates', 'demonstrated', 'present',
-            'presents', 'presented', 'introduce', 'introduces', 'introduced',
-            'proposal', 'novel', 'new', 'different', 'various', 'several', 'many',
-            'number', 'number of', 'based', 'using', 'however', 'although', 'though',
-            'while', 'therefore', 'thus', 'hence', 'moreover', 'furthermore',
-            'additionally', 'specifically', 'generally', 'typically', 'usually',
-            'often', 'sometimes', 'always', 'never', 'ever', 'already', 'yet',
-            'since', 'due', 'because', 'following', 'previous', 'prior', 'existing',
-            'current', 'recent', 'recently', 'related', 'concerned', 'compared',
-            'addition', 'well', 'good', 'better', 'best', 'high', 'higher', 'highest',
-            'low', 'lower', 'large', 'larger', 'largest', 'small', 'smaller',
-            'first', 'second', 'third', 'last', 'next', 'final', 'main', 'major',
-            'significant', 'importance', 'important', 'able', 'unable', 'possible',
-            'impossible', 'difficult', 'easy', 'simple', 'complex', 'different',
-            'similar', 'order', 'require', 'requires', 'required', 'need', 'needs',
-            'able', 'capable', 'perform', 'performs', 'performance', 'achieve',
-            'achieves', 'achieved', 'obtain', 'obtains', 'obtained', 'provide',
-            'provides', 'provided', 'enable', 'enables', 'applied', 'apply', 'applies',
-
-            # Common AI/ML terms that are too generic in context
-            'learning', 'model', 'models', 'training', 'train', 'test', 'testing',
-            'data', 'dataset', 'datasets', 'feature', 'features', 'input', 'inputs',
-            'output', 'outputs', 'prediction', 'predictions', 'accuracy', 'score',
-            'scores', 'state', 'states', 'artificial', 'intelligence', 'deep',
-
-            # Other common filler words
-            'case', 'cases', 'point', 'points', 'term', 'terms', 'way', 'ways',
-            'aspect', 'aspects', 'issue', 'issues', 'problem', 'problems',
-            'question', 'questions', 'answer', 'answers', 'part', 'parts',
-            'thing', 'things', 'stuff', 'area', 'areas', 'field', 'fields',
-            'level', 'types', 'kind', 'form', 'forms', 'set', 'sets',
-            'process', 'processes', 'type', 'value', 'values', 'time', 'times',
-            'year', 'years', 'day', 'days', 'person', 'people', 'group', 'groups',
-            'word', 'words', 'example', 'examples', 'regard', 'regards', 'without'
-        }
+        # Use vocabulary module for stopwords
+        stopwords = VOCABULARY_STOPWORDS
 
         for paper in papers:
             text = paper.title
@@ -708,72 +649,8 @@ class DeepDomainAnalyzer:
         if len(years) < 2:
             return []
 
-        # Stopwords to filter out from emerging topics
-        emerging_stopwords = {
-            # Common English words
-            'have', 'has', 'had', 'having', 'does', 'doing', 'done', 'make', 'made',
-            'going', 'goes', 'went', 'gone', 'come', 'comes', 'came', 'take', 'takes',
-            'took', 'taken', 'see', 'sees', 'saw', 'seen', 'know', 'knows', 'knew',
-            'think', 'thinks', 'thought', 'want', 'wants', 'use', 'uses', 'using',
-            'find', 'finds', 'found', 'give', 'gives', 'gave', 'given', 'tell', 'tells',
-            'told', 'become', 'becomes', 'became', 'leave', 'leaves', 'left', 'put',
-            'keep', 'keeps', 'kept', 'let', 'begin', 'begins', 'began', 'begun',
-            'appear', 'appears', 'appeared', 'consider', 'considers', 'considered',
-            'these', 'those', 'their', 'there', 'here', 'every', 'both', 'few',
-            'more', 'most', 'other', 'some', 'such', 'only', 'own', 'same',
-            'with', 'without', 'within', 'across', 'along', 'among', 'after',
-            'before', 'behind', 'beside', 'besides', 'between', 'during', 'under',
-            'until', 'upon', 'within', 'without', 'each', 'any', 'all', 'being',
-            'that', 'this', 'then', 'than', 'them', 'they', 'its', 'also', 'data',
-            'one', 'ones', 'two', 'three', 'ensures', 'ensure', 'ensuring',
-            'inherent', 'inherently', 'possess', 'possesses', 'possessing',
-            # Common fillers
-            'often', 'sometimes', 'usually', 'always', 'never', 'rarely',
-            'however', 'although', 'though', 'while', 'therefore', 'thus',
-            'hence', 'moreover', 'furthermore', 'additionally', 'specifically',
-            'generally', 'typically', 'particularly', 'essentially', 'basically',
-            'actually', 'really', 'quite', 'rather', 'somewhat', 'completely',
-            'entirely', 'especially', 'probably', 'possibly',
-            'certainly', 'clearly', 'obviously', 'seems', 'appears', 'may',
-            'might', 'could', 'would', 'should', 'must', 'need', 'needs',
-            'recent', 'recently', 'current', 'existing', 'proposed', 'novel',
-            'generating', 'generated', 'generation', 'driven', 'drive',
-            'when', 'where', 'what', 'which', 'who', 'how', 'process',
-            'simply', 'nicely', 'successfully', 'effectively', 'efficiently',
-            'significantly', 'dramatically', 'substantially', 'gradually',
-            'rapidly', 'quickly', 'slowly', 'suddenly', 'ultimately',
-            'specialized', 'specialize', 'generate', 'generate', 'generated',
-            'high', 'higher', 'low', 'lower', 'large', 'larger', 'small',
-            'better', 'best', 'worse', 'worst', 'good', 'bad', 'well',
-            'potential', 'potentially', 'successfully', 'success', 'effectiveness',
-            # Common AI/ML terms (too generic in this context)
-            'models', 'model', 'human', 'humans', 'human-like', 'human-level',
-            'state', 'states', 'space', 'spaces', 'sample', 'samples', 'sampling',
-            'real', 'world', 'real-world', 'realistic', 'synthetic', 'public',
-            'private', 'first', 'second', 'third', 'next', 'last', 'final',
-            # Generic research terms
-            'based', 'task', 'tasks', 'challenges', 'challenging', 'approach', 'method', 'methods',
-            'problem', 'problems', 'issue', 'issues', 'solution', 'solutions',
-            'results', 'experiments', 'experiment', 'performance', 'accuracy',
-            'show', 'shows', 'shown', 'demonstrate', 'demonstrates', 'propose',
-            'proposed', 'paper', 'work', 'research', 'study', 'paper', 'novel',
-            'various', 'different', 'several', 'multiple', 'number', 'case',
-            'cases', 'example', 'examples', 'regard', 'regards', 'aspect',
-            'aspects', 'thing', 'things', 'stuff', 'point', 'way', 'ways',
-            'design', 'designed', 'designing', 'designs', 'framework', 'frameworks',
-            # Vague terms
-            'enable', 'enables', 'enhanced', 'enhancing', 'enhances',
-            'improve', 'improved', 'improving', 'improvement',
-            'address', 'addresses', 'addressing', 'addressed',
-            'introduce', 'introduces', 'introduced', 'introduction',
-            'present', 'presents', 'presented', 'presenting',
-            'provide', 'provides', 'provided', 'providing',
-            'obtain', 'obtains', 'obtained', 'obtaining',
-            'achieve', 'achieves', 'achieved', 'achieving',
-            'propose', 'proposes', 'proposed', 'proposing',
-            'capability', 'capabilities', 'capable', 'ability', 'abilities',
-            'leads', 'lead', 'leading', 'results', 'result', 'following', 'follows'
-        }
+        # Use vocabulary module for stopwords
+        emerging_stopwords = VOCABULARY_STOPWORDS
 
         # Extract keywords by year
         yearly_keywords = defaultdict(Counter)

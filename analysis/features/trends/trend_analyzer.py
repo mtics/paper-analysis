@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from collections import Counter, defaultdict
 
 from analysis.features.trends.stats_utils import mann_kendall_test
+from analysis.data.vocabulary import STOPWORDS as VOCABULARY_STOPWORDS, SYNONYMS
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -89,18 +90,8 @@ class TrendAnalyzer:
         keyword_by_year = defaultdict(lambda: defaultdict(int))
         keyword_total = Counter()
 
-        stopwords = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
-                    'of', 'with', 'by', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
-                    'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
-                    'should', 'may', 'might', 'must', 'can', 'this', 'that', 'these', 'those',
-                    'i', 'we', 'they', 'he', 'she', 'it', 'my', 'our', 'their', 'its', 'from',
-                    'as', 'into', 'through', 'during', 'before', 'after', 'above', 'below',
-                    'between', 'under', 'again', 'further', 'then', 'once', 'here', 'there',
-                    'when', 'where', 'why', 'how', 'all', 'each', 'few', 'more', 'most',
-                    'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same',
-                    'so', 'than', 'too', 'very', 'just', 'also', 'now', 'paper', 'approach',
-                    'method', 'system', 'result', 'work', 'propose', 'show', 'use', 'new',
-                    'based', 'proposed', 'using', 'paper', 'learning', 'model', 'data'}
+        # Use vocabulary module for stopwords
+        stopwords = VOCABULARY_STOPWORDS
 
         for paper in papers:
             text = paper.title
@@ -326,11 +317,8 @@ class ComparativeAnalyzer:
                 for p in papers
             ])
             words = text.lower().split()
-            stopwords = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
-                        'of', 'with', 'by', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
-                        'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
-                        'paper', 'approach', 'method', 'system', 'result', 'work', 'propose'}
-            words = [w for w in words if len(w) > 2 and w not in stopwords]
+            # Use vocabulary module for stopwords
+            words = [w for w in words if len(w) > 2 and w not in VOCABULARY_STOPWORDS]
             word_counts = Counter(words)
             comparison['top_keywords'][conf_name] = dict(word_counts.most_common(20))
 

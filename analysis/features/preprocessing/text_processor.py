@@ -12,6 +12,7 @@ import pickle
 import hashlib
 
 from analysis.features.preprocessing.ngram_extractor import NgramExtractor
+from analysis.data.vocabulary import STOPWORDS as VOCABULARY_STOPWORDS, SYNONYMS, normalize_word
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -44,25 +45,8 @@ except ImportError:
     logger.warning("SentenceTransformers not available")
 
 
-# Default English stopwords (basic list)
-DEFAULT_STOPWORDS = {
-    'a', 'an', 'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
-    'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'been',
-    'be', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
-    'should', 'may', 'might', 'must', 'shall', 'can', 'need', 'dare', 'ought',
-    'used', 'it', 'its', 'this', 'that', 'these', 'those', 'i', 'you', 'he',
-    'she', 'we', 'they', 'what', 'which', 'who', 'whom', 'whose', 'where',
-    'when', 'why', 'how', 'all', 'each', 'every', 'both', 'few', 'more',
-    'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own',
-    'same', 'so', 'than', 'too', 'very', 'just', 'also', 'now', 'here',
-    'there', 'then', 'once', 'if', 'because', 'while', 'although', 'though',
-    'after', 'before', 'above', 'below', 'between', 'into', 'through',
-    'during', 'under', 'again', 'further', 'then', 'show', 'use', 'propose',
-    'present', 'paper', 'approach', 'method', 'system', 'result', 'work',
-    'based', 'using', 'used', 'new', 'novel', 'different', 'existing',
-    'proposed', 'show', 'demonstrate', 'achieve', 'perform', 'state',
-    'art', 'given', 'set', 'let', 'consider', 'assume', 'define', 'term'
-}
+# Use stopwords from vocabulary module
+DEFAULT_STOPWORDS = VOCABULARY_STOPWORDS
 
 
 class TextPreprocessor:
