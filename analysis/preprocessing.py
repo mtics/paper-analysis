@@ -11,6 +11,8 @@ from pathlib import Path
 import pickle
 import hashlib
 
+from analysis.ngram_extractor import NgramExtractor
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -221,7 +223,7 @@ class TextPreprocessor:
 
         # Lemmatize
         if self.use_lemmatization:
-            tokens = self.lematize(tokens)
+            tokens = self.lemmatize(tokens)
 
         return ' '.join(tokens)
 
@@ -426,6 +428,43 @@ class KeywordExtractor:
         except Exception as e:
             logger.error(f"Keyword extraction failed: {e}")
             return [[] for _ in texts]
+
+
+class NgramPreprocessor:
+    """带 N-gram 支持的文本预处理器"""
+
+    def __init__(self, ngram_type: str = 'trigram', min_count: int = 5, threshold: float = 10.0):
+        self.ngram_type = ngram_type
+        self.min_count = min_count
+        self.threshold = threshold
+        self.extractor: Optional[NgramExtractor] = None
+
+    def fit(self, texts: List[str]) -> 'NgramPreprocessor':
+        """训练 N-gram 模型"""
+        self.extractor = NgramExtractor(
+            ngram_type=self.ngram_type,
+            min_count=self.min_count,
+            threshold=self.threshold
+        )
+        self.extractor.fit(texts)
+        return self
+
+    def transform(self, texts: List[str]) -> List[List[str]]:
+        """转换文本为包含 N-gram 的词列表"""
+        if self.extractor is None:
+            raise ValueError("Must call fit() before transform()")
+        return self.extractor.transform(texts)
+
+    def fit_transform(self, texts: List[str]) -> List[List[str]]:
+        """一步完成训练和转换"""
+        self.fit(texts)
+        return self.transform(texts)
+
+    def get_phrases(self, top_n: Optional[int] = None) -> Dict[str, float]:
+        """获取提取的短语"""
+        if self.extractor is None:
+            raise ValueError("Must call fit() before get_phrases()")
+        return self.extractor.get_phrases(top_n)
 
 
 def preprocess_papers(papers: List, add_abstract: bool = True) -> List[str]:
