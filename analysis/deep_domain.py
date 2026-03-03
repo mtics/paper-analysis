@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 from collections import Counter, defaultdict
 from datetime import datetime
 import re
+import numpy as np
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -953,6 +954,70 @@ def format_report(report: DomainAnalysisReport) -> str:
     output.append("\n" + "=" * 80)
 
     return "\n".join(output)
+
+
+def analyze_vocabulary_turnover(
+    papers: List,
+    years: List[int],
+    top_n: int = 50
+) -> Dict:
+    """
+    分析领域词汇的新陈代谢 - 追踪词汇的兴衰
+
+    Returns:
+        {
+            'rising_keywords': [{'word': str, 'change': float}],
+            'declining_keywords': [{'word': str, 'change': float}],
+            'yearly_top_keywords': {year: [(word, count)]}
+        }
+    """
+    from collections import Counter
+
+    # 按年份统计词频
+    word_by_year = defaultdict(lambda: defaultdict(int))
+
+    for paper in papers:
+        if paper.year in years and paper.has_abstract:
+            text = (paper.title + " " + paper.abstract).lower()
+            words = text.split()
+            for word in words:
+                if len(word) > 3:
+                    word_by_year[paper.year][word] += 1
+
+    # 计算每个词的趋势
+    keyword_trends = []
+    all_words = set(w for year_words in word_by_year.values() for w in year_words)
+
+    for word in all_words:
+        counts = [word_by_year.get(y, {}).get(word, 0) for y in sorted(years)]
+
+        if sum(counts) < 5:  # 过滤太低频
+            continue
+
+        early = np.mean(counts[:2]) if len(counts) >= 2 else counts[0]
+        late = np.mean(counts[-2:]) if len(counts) >= 2 else counts[-1]
+
+        if early > 0:
+            change = (late - early) / early
+            keyword_trends.append({
+                'word': word,
+                'change': round(change, 3),
+                'early_avg': round(early, 1),
+                'late_avg': round(late, 1)
+            })
+
+    # 排序
+    rising = sorted(keyword_trends, key=lambda x: x['change'], reverse=True)[:top_n]
+    declining = sorted(keyword_trends, key=lambda x: x['change'])[:top_n]
+
+    return {
+        'rising_keywords': rising[:20],
+        'declining_keywords': declining[:20],
+        'yearly_top_keywords': {
+            y: sorted(word_by_year[y].items(), key=lambda x: x[1], reverse=True)[:10]
+            for y in years
+        }
+    }
 
 
 if __name__ == "__main__":
