@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \":*)",
+      "Bash(firecrawl search \"GitHub Python library academic paper analysis bibliometrics DBLP arxiv\" --categories github --limit 15 --json -o .firecrawl/survey/paper-analysis-libs.json)",
+      "Bash(gh search repos \"paper analysis python\" --limit 10 --json name,description,url,stargazersCount)",
+      "Bash(curl -s \"https://api.github.com/search/repositories?q=paper+analysis+python&sort=stars&order=desc&per_page=15\")",
+      "Bash(curl -s \"https://api.github.com/search/repositories?q=bibliometrics+OR+scholarly+OR+academic+python&sort=stars&order=desc&per_page=20\")",
+      "Bash(python -c \"import json,sys; data=json.load\\(sys.stdin\\); print\\(''\\\\n''.join\\([f\"\"{r[''full_name'']} \\({r[''stargazers_count'']} stars\\)\"\" + ''\\\\n  '' + r[''description''][:150] for r in data[''items''][:15]]\\)\\)\")",
+      "Bash(curl -s \"https://api.github.com/search/repositories?q=DBLP+python+OR+scholarly+python+library&sort=stars&order=desc&per_page=20\")",
+      "Bash(python -c \"import json,sys; data=json.load\\(sys.stdin\\); print\\(''\\\\n''.join\\([f\"\"{r[''full_name'']} \\({r[''stargazers_count'']} stars\\)\"\" + ''\\\\n  '' + \\(r[''description''] or ''''\\) r in data[''[:150] foritems''][:15]]\\)\\)\")",
+      "Bash(curl -s \"https://api.github.com/search/repositories?q=topic+modeling+python+gensim+OR+LDA+conference+papers&sort=stars&order=desc&per_page=20\")",
+      "Bash(curl -s \"https://api.github.com/search/repositories?q=research+trend+analysis+python+academic&sort=stars&order=desc&per_page=20\")",
+      "Bash(python3:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(curl:*)",
+      "Bash(sudo dpkg:*)",
+      "Bash(pkill:*)",
+      "Bash(pgrep:*)",
+      "Bash(kill:*)",
+      "Bash(fc-list:*)",
+      "Bash(node --version:*)",
+      "Skill(code-review:code-review)",
+      "Skill(code-review:code-review:*)",
+      "Bash(git -C \"/mnt/e/OneDrive - UTS/Workspace/Code/Research/ccf-analysis\" remote -v)",
+      "Bash(codex --version)",
+      "Bash(codex -v)",
+      "Bash(where gh)",
+      "Bash(gh search repos \"paper trend analysis visualization\" --limit 20 --sort stars)",
+      "Bash(export PATH=\"$PATH:/c/Program Files/GitHub CLI\")",
+      "Bash(gh search repos \"CCF conference paper analysis\" --limit 10 --json fullName,description,stargazersCount,language,topics)",
+      "Bash(firecrawl search \"site:github.com academic paper trend analysis visualization\" --limit 20 --categories github -o .firecrawl/search-github-trends.json --json)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(''\\\\n''.join\\([f\"\"{i+1}. {x[''name'']} \\(★{x[''stargazers_count'']}\\): {x[''description'']}\"\" for i,x in enumerate\\(d[''items''][:20]\\)]\\)\\)\")"
+    ]
+  }
+}

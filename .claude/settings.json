@@ -1,0 +1,45 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(''\\\\n''.join\\([f\"\"{i+1}. {x[''name'']} \\(★{x[''stargazers_count'']}\\): {x[''description''][:100]}\"\" for i,x in enumerate\\(d[''items''][:15]\\)]\\)\\)\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(''\\\\n''.join\\([f\"\"{i+1}. {x[''name'']} \\(★{x[''stargazers_count'']}\\): {x[''description''][:120]}\"\" for i,x in enumerate\\(d[''items''][:15]\\)]\\)\\)\")",
+      "Bash(gh search repos \"CCF conference paper analysis\" --limit 10 --json fullName,description,stargazersCount,language)",
+      "Bash(gh search repos \"academic paper analysis visualization\" --limit 10 --json fullName,description,stargazersCount,language)",
+      "Bash(gh search repos \"paper visualization trends\" --limit 15 --json fullName,description,stargazersCount,language)",
+      "Bash(gh search repos \"research paper analysis\" --language python --limit 15 --json fullName,description,stargazersCount,language)",
+      "Bash(gh search repos \"NLP LLM trend analysis\" --language python --limit 15 --json fullName,description,stargazersCount,language)",
+      "Bash(gh search repos \"academic visualization dashboard\" --language python --limit 15 --json fullName,description,stargazersCount,language)",
+      "Bash(pip show pymannkendall)",
+      "Bash(pip install pymannkendall)",
+      "Bash(python -c \":*)",
+      "Bash(python -c \"from gensim.models.phrases import Phraser; print\\(''Phraser found''\\)\")",
+      "Bash(python -c \"from gensim.models import Phrases; p = Phrases\\([[''hello'', ''world'']]\\); print\\([a for a in dir\\(p\\) if not a.startswith\\(''_''\\)]\\)\")",
+      "Bash(pip install pytest)",
+      "Bash(python -m analysis analyze aaai --years 2020,2021,2022 --emerging)",
+      "Bash(pytest tests/test_stats_utils.py tests/test_ngram_extractor.py -v)",
+      "Bash(python -m pytest tests/test_stats_utils.py tests/test_ngram_extractor.py -v)",
+      "Bash(where openclaw)",
+      "Read(//e/OneDrive - UTS/Workspace/Code/Research/ccf-analysis/$HOME/**)",
+      "Read(//c/Users/zhwli/**)",
+      "Bash(cmd.exe /c \"dir /s /b C:\\\\openclaw* 2>nul\")",
+      "Bash(cmd.exe /c \"dir /s /b D:\\\\openclaw* 2>nul\")",
+      "Read(//mnt/c/Program Files/**)",
+      "Bash(echo $PATH)",
+      "Bash(scoop list)",
+      "Bash(choco list --local-only)",
+      "Bash(cmd.exe /c \"where openclaw\")",
+      "Bash(ls -la /c/Users/zhwli/*.bak)",
+      "Read(//d/Softwares/**)",
+      "Read(//e/OneDrive - UTS/**)",
+      "Bash(git -C ~ for-each-ref --format '%\\(refname\\)' refs/backup/)",
+      "Bash(git -C ~ stash list)",
+      "mcp__plugin_context7_context7__resolve-library-id",
+      "mcp__plugin_context7_context7__query-docs",
+      "Bash(pip install networkx)",
+      "Read(//e/OneDrive/**)"
+    ],
+    "additionalDirectories": [
+      "\\tmp"
+    ]
+  }
+}
