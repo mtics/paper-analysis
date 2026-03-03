@@ -12,7 +12,7 @@ Contains stopwords to filter and synonym mappings to merge.
 STOPWORDS = {
     # Common English words
     'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
-    'of', 'with', 'by', 'from', 'as', 'is', 'was', 'were', 'been',
+    'of', 'with', 'by', 'from', 'as', 'is', 'was', 'were', 'been', 'being',
     'be', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
     'should', 'may', 'might', 'must', 'shall', 'can', 'need', 'dare', 'ought',
     'used', 'it', 'its', 'this', 'that', 'these', 'those', 'i', 'you', 'he',
@@ -24,6 +24,26 @@ STOPWORDS = {
     'before', 'after', 'above', 'below', 'between', 'under', 'again',
     'further', 'while', 'own', 'out', 'off', 'over', 'any', 'because',
     'until', 'against', 'among', 'yet', 'even', 'still', 'well', 'back',
+
+    # Additional pronouns and possessive adjectives (from analysis)
+    'our', 'our', 'our', 'our', 'our',  # Repeated for emphasis - very high freq
+    'their', 'they', 'them', 'his', 'her', 'its', 'my', 'your', 'itself',
+    'ours', 'theirs', 'him', 'hers', 'myself', 'yourself', 'themselves',
+
+    # Additional verbs (from analysis)
+    'are', 'is', 'was', 'were', 'being', 'been', 'am', "isn't", "aren't",
+    "wasn't", "weren't", 'does', 'did', 'doing', "don't", "doesn't", "didn't",
+    'having', 'had', 'has',
+
+    # Academic connectors and transitions (from analysis - high frequency)
+    'however', 'via', 'often', 'due', 'without', 'compared', 'specifically',
+    'finally', 'thus', 'hence', 'therefore', 'moreover', 'furthermore',
+    'additionally', 'although', 'whereas', 'since', 'because', 'namely',
+    'especially', 'particularly', 'typically', 'usually', 'generally',
+    'actually', 'already', 'always', 'never', 'sometimes', 'perhaps',
+    'possibly', 'probably', 'likely', 'unlikely', 'essentially', 'basically',
+    'approximately', 'exactly', 'recently', 'currently', 'previously',
+    'similarly', 'differently', 'alternatively', 'consequently', 'accordingly',
 
     # Academic writing common words
     'paper', 'work', 'show', 'showed', 'shown', 'shows', 'propose', 'proposed',
@@ -107,6 +127,29 @@ STOPWORDS = {
     'user', 'users', 'quality', 'space', 'temporal', 'real', 'world',
     'level', 'set', 'sets', 'cross', 'context', 'fine', 'scale', 'scales',
     'address', 'design', 'applications', 'understanding', 'available',
+
+    # More analysis artifacts (additional from execution log)
+    'effectiveness', 'effectively', 'performance', 'real-world', 'realworld',
+    'proposed', 'proposing', 'existing', 'various', 'wide', 'range', 'ranges',
+    'able', 'neither', 'either', 'despite', 'although', 'whereas', 'whether',
+    'overall', 'particular', 'overall', 'per', 'vs', 'versus', 'eg', 'ie',
+    'etc', 'et', 'al', 'cf', 'ref', 'refs', 'see', 'cf', 'vs', 'within',
+    'along', 'across', 'around', 'among', 'throughout', 'onto', 'upon',
+    'above', 'below', 'beyond', 'near', 'besides', 'beside',
+
+    # Additional generic terms from recent analysis
+    'stateoftheart', 'state_of_the_art', 'sota',  # Common but generic
+    'challenging', 'challenges', 'challenge',
+    'aims', 'aim', 'goal', 'goals', 'objective', 'objectives',
+    'process', 'processes', 'processing',
+    'module', 'modules', 'component', 'components',
+    'strategy', 'strategies', 'approach',  # Too generic
+    'including', 'included', 'include', 'includes',
+    'generate', 'generated', 'generates', 'generation',
+    'distribution', 'distributions', 'distributed',
+    'information', 'regarding', 'concerning',
+    'terms', 'conditions', 'respect', 'instance',
+    'potential', 'potentially', 'significantly',
 }
 
 # =============================================================================
@@ -206,6 +249,7 @@ SYNONYMS = {
     'benchmarks': 'benchmark',
     'state-of-the-art': 'sota',
     'state of the art': 'sota',
+    'stateoftheart': 'sota',
     'state_art': 'sota',
     'sota': 'sota',
     'baseline': 'baseline',

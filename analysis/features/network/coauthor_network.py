@@ -98,13 +98,38 @@ class CoauthorNetworkAnalyzer:
     def find_bridge_researchers(
         self,
         G: nx.Graph,
-        top_n: int = 20
+        top_n: int = 20,
+        min_weight: int = 2
     ) -> List[Dict]:
-        """识别高 betweenness centrality 的桥接者"""
+        """
+        识别高 betweenness centrality 的桥接者
+
+        Args:
+            G: 共作者网络图
+            top_n: 返回前 N 个桥接者
+            min_weight: 最小合作权重（剪枝阈值），只保留合作次数 >= min_weight 的边
+        """
         if G.number_of_nodes() < 2:
             return []
 
-        betweenness = nx.betweenness_centrality(G)
+        # 剪枝：移除弱连接边，只保留合作次数 >= min_weight 的边
+        if min_weight > 1:
+            edges_to_remove = [(u, v) for u, v, w in G.edges(data='weight') if w < min_weight]
+            G = G.copy()
+            G.remove_edges_from(edges_to_remove)
+            logger.info(f"Pruned {len(edges_to_remove)} weak edges (weight < {min_weight})")
+
+        # 移除孤立节点
+        G.remove_nodes_from(list(nx.isolates(G)))
+        logger.info(f"Network after pruning: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
+
+        # 如果图太大，使用近似算法
+        if G.number_of_nodes() > 50000:
+            logger.warning(f"Large network ({G.number_of_nodes()} nodes), using approximate betweenness")
+            betweenness = nx.betweenness_centrality(G, k=min(1000, G.number_of_nodes() // 10))
+        else:
+            betweenness = nx.betweenness_centrality(G)
+
         top_researchers = sorted(betweenness.items(), key=lambda x: x[1], reverse=True)[:top_n]
 
         return [{"name": name, "betweenness": score} for name, score in top_researchers]

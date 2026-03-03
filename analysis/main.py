@@ -97,9 +97,10 @@ def show_statistics(args):
 
     # Conference table - grouped by category
     print(f"\n{'📚 各会议详情':<10}")
-    print("-" * 65)
-    print(f"  {'类别':<4} {'会议':<8} {'论文数':>8} {'有摘要':>8} {'完整率':>7} {'年份范围':<12}")
-    print("  " + "-" * 61)
+    print("-" * 58)
+    # Header: 类别(4) 会议(6) 论文数(8右) 有摘要(8右) 完整率(6右) 年份(10)
+    print("  类别   会议        论文数    有摘要    完整率   年份范围")
+    print("  " + "-" * 54)
 
     # Group conferences by category
     conf_by_category = {}
@@ -127,16 +128,15 @@ def show_statistics(args):
                 year_str = str(year_range)
 
             # Show category only on first row of each group
-            cat_display = category if i == 0 else ""
-            print(f"  {cat_display:<4} {conf.upper():<8} {papers:>8,} {with_abstract:>8,} {rate:>6.1f}% {year_str:<12}")
+            cat_display = category if i == 0 else " " * 4
+            print(f"  {cat_display:<4} {conf.upper():<10} {papers:>8,} {with_abstract:>8,} {rate:>5.1f}%  {year_str}")
 
         # Add blank line after each category group
         print()
 
-    print("  " + "-" * 61)
-    total_row = f"  {'总计':<4} {'-':<8} {total_papers:>8,} {total_with_abstract:>8,} {coverage_rate:>6.1f}% {'-':<12}"
-    print(total_row)
-    print("=" * 65)
+    print("  " + "-" * 54)
+    print(f"  总计   -           {total_papers:>8,} {total_with_abstract:>8,} {coverage_rate:>5.1f}%  -")
+    print("=" * 58)
 
 
 def analyze_conference(args):
@@ -573,14 +573,30 @@ def full_analysis(args):
     Executes all analyses in one go: trends, ecosystem, network, and deep domain.
     """
     from datetime import datetime
+    import time
 
-    # Setup output
+    # Setup output - use project root (analysis/main.py -> analysis/ -> project/)
+    project_root = Path(__file__).parent.parent
     if args.output:
+        # Convert to absolute path if relative
         output_path = Path(args.output)
+        if not output_path.is_absolute():
+            output_path = project_root / output_path
     else:
-        output_path = Path(__file__).parent.parent.parent / "output" / "analysis"
+        output_path = project_root / "output" / "analysis"
     output_path.mkdir(parents=True, exist_ok=True)
     output_mgr = OutputManager(output_path)
+
+    # Also setup log file in output/logs
+    log_dir = project_root / "output" / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_file = log_dir / f"full_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+
+    # Redirect logs to file
+    file_handler = logging.FileHandler(log_file, encoding='utf-8')
+    file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+    logging.getLogger().addHandler(file_handler)
+    logging.getLogger('analysis').setLevel(logging.INFO)
 
     # Parse conferences
     conferences = None
@@ -715,8 +731,10 @@ def full_analysis(args):
         density = nx.density(G)
         print(f"     网络密度: {density:.4f}")
 
-        # Find bridge researchers
-        bridges = network_analyzer.find_bridge_researchers(G)
+        # Find bridge researchers (with pruning for large networks)
+        # min_weight=2 keeps only edges where authors co-authored >= 2 papers
+        print(f"\n   正在计算桥接研究者 (剪枝优化中)...")
+        bridges = network_analyzer.find_bridge_researchers(G, min_weight=2)
         print(f"\n   桥接研究者 (跨领域合作最多):")
         for author_info in bridges[:10]:
             author = author_info.get('name', 'Unknown')

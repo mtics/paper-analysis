@@ -54,7 +54,10 @@ class VocabularyTimeline:
                 continue
 
             # 简单分词（后续可用 NgramExtractor 增强）
+            import string
             words = text.split()
+            # Strip punctuation from words
+            words = [w.translate(str.maketrans('', '', string.punctuation)) for w in words]
             for word in words:
                 if len(word) > 3:  # 过滤短词
                     phrase_by_conf_year[word][conf][year] += 1

@@ -43,7 +43,8 @@
       "Bash(ls -la \"e:\\\\OneDrive - UTS\\\\Workspace\\\\Code\\\\Research\\\\ccf-analysis\\\\analysis\"\" | grep -E \"lifecycle)",
       "Bash(deep_domain \")",
       "Bash(python analysis/analyze_vocabulary_temp.py)",
-      "Bash(python -m analysis stats)"
+      "Bash(python -m analysis stats)",
+      "Bash(python -m analysis full --years 2024,2025 --domains \"AI Agent\" --output output)"
     ],
     "additionalDirectories": [
       "\\tmp"

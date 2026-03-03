@@ -93,12 +93,15 @@ class TrendAnalyzer:
         # Use vocabulary module for stopwords
         stopwords = VOCABULARY_STOPWORDS
 
+        import string
         for paper in papers:
             text = paper.title
             if paper.has_abstract:
                 text += " " + paper.abstract
 
             words = text.lower().split()
+            # Strip punctuation from words
+            words = [w.translate(str.maketrans('', '', string.punctuation)) for w in words]
             words = [w for w in words if len(w) > 2 and w not in stopwords]
 
             for word in set(words):  # Use set to count unique words per paper
@@ -317,6 +320,9 @@ class ComparativeAnalyzer:
                 for p in papers
             ])
             words = text.lower().split()
+            # Strip punctuation from words before filtering
+            import string
+            words = [w.translate(str.maketrans('', '', string.punctuation)) for w in words]
             # Use vocabulary module for stopwords
             words = [w for w in words if len(w) > 2 and w not in VOCABULARY_STOPWORDS]
             word_counts = Counter(words)

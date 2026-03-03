@@ -849,6 +849,7 @@ def analyze_vocabulary_turnover(
         }
     """
     from collections import Counter
+    import string
 
     # 按年份统计词频
     word_by_year = defaultdict(lambda: defaultdict(int))
@@ -857,6 +858,8 @@ def analyze_vocabulary_turnover(
         if paper.year in years and paper.has_abstract:
             text = (paper.title + " " + paper.abstract).lower()
             words = text.split()
+            # Strip punctuation from words
+            words = [w.translate(str.maketrans('', '', string.punctuation)) for w in words]
             for word in words:
                 if len(word) > 3:
                     word_by_year[paper.year][word] += 1

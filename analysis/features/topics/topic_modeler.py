@@ -7,12 +7,15 @@ Cluster papers into topics/domains.
 import os
 import json
 import logging
+import string
 from typing import List, Dict, Tuple, Optional, Set
 from pathlib import Path
 from dataclasses import dataclass, field
 from collections import Counter, defaultdict
 import pickle
 import hashlib
+
+from analysis.data.vocabulary import STOPWORDS as VOCABULARY_STOPWORDS
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -342,19 +345,11 @@ class SubtopicAnalyzer:
 
             # Simple keyword extraction
             words = text.lower().split()
+            # Strip punctuation from words
+            words = [w.translate(str.maketrans('', '', string.punctuation)) for w in words]
 
-            # Filter short words and stopwords
-            stopwords = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
-                        'of', 'with', 'by', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
-                        'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
-                        'should', 'may', 'might', 'must', 'can', 'this', 'that', 'these', 'those',
-                        'i', 'we', 'they', 'he', 'she', 'it', 'my', 'our', 'their', 'its', 'from',
-                        'as', 'into', 'through', 'during', 'before', 'after', 'above', 'below',
-                        'between', 'under', 'again', 'further', 'then', 'once', 'here', 'there',
-                        'when', 'where', 'why', 'how', 'all', 'each', 'few', 'more', 'most',
-                        'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same',
-                        'so', 'than', 'too', 'very', 'just', 'also', 'now', 'paper', 'approach',
-                        'method', 'system', 'result', 'work', 'propose', 'show', 'use', 'new'}
+            # Filter short words and stopwords using vocabulary module
+            stopwords = VOCABULARY_STOPWORDS
 
             words = [w for w in words if len(w) > 2 and w not in stopwords]
 
