@@ -25,7 +25,14 @@ class NgramExtractor:
             min_count: 最小词频阈值，低于此值的词组会被忽略
             threshold: 评分阈值，较高的值产生更严格的短语提取
             ngram_type: 'bigram' | 'trigram'
+
+        Raises:
+            ValueError: If ngram_type is not 'bigram' or 'trigram'
         """
+        # Validate ngram_type
+        if ngram_type not in ('bigram', 'trigram'):
+            raise ValueError(f"ngram_type must be 'bigram' or 'trigram', got '{ngram_type}'")
+
         self.min_count = min_count
         self.threshold = threshold
         self.ngram_type = ngram_type
@@ -36,7 +43,6 @@ class NgramExtractor:
         self.trigram_phraser: Optional[Phraser] = None
 
         self._vocabulary: Set[str] = set()
-        self._num_phrases: int = 0
 
     def _tokenize(self, text: str) -> List[str]:
         """基础分词 - 转为小写并分词"""
@@ -55,6 +61,9 @@ class NgramExtractor:
 
         Args:
             texts: 原始文本列表（每篇论文的 title + abstract）
+
+        Raises:
+            ValueError: If corpus is empty after tokenization
         """
         logger.info(f"Training {self.ngram_type} extractor on {len(texts)} texts...")
 
@@ -62,6 +71,10 @@ class NgramExtractor:
         tokenized = [self._tokenize(t) for t in texts]
         # 过滤空文本
         tokenized = [t for t in tokenized if len(t) > 0]
+
+        # Check if corpus is empty after tokenization
+        if not tokenized:
+            raise ValueError("Corpus is empty after tokenization. No valid tokens found.")
 
         if self.ngram_type in ['bigram', 'trigram']:
             # 训练 Bigram 模型
@@ -104,15 +117,25 @@ class NgramExtractor:
 
         Returns:
             每个文本对应的词列表，包含检测到的短语
+
+        Raises:
+            RuntimeError: If model has not been trained yet
         """
         if not texts:
             return []
+
+        # Check if model has been trained
+        if self.bigram_phraser is None:
+            raise RuntimeError("Model has not been trained. Call fit() before transform().")
 
         tokenized = [self._tokenize(t) for t in texts]
 
         if self.ngram_type == 'bigram':
             return [list(self.bigram_phraser[sent]) for sent in tokenized]
         elif self.ngram_type == 'trigram':
+            # Check if trigram model has been trained
+            if self.trigram_phraser is None:
+                raise RuntimeError("Model has not been trained. Call fit() before transform().")
             # 先应用 bigram，再用 trigram
             bigrammed = [self.bigram_phraser[sent] for sent in tokenized]
             return [list(self.trigram_phraser[sent]) for sent in bigrammed]
