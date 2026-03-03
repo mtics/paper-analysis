@@ -52,19 +52,56 @@ def list_conferences(args):
 
 
 def show_statistics(args):
-    """Show overall statistics."""
+    """Show overall statistics in table format."""
     loader = PaperDataLoader(args.data_dir)
     stats = loader.get_statistics()
 
-    print("\n=== Overall Statistics ===")
-    print(f"Total conferences: {stats['total_conferences']}")
-    print(f"Total papers: {stats['total_papers']}")
-    print(f"Papers with abstract: {stats['papers_with_abstract']}")
-    print(f"Coverage rate: {stats['papers_with_abstract']/stats['total_papers']*100:.1f}%")
+    # Overall summary
+    total_papers = stats['total_papers']
+    total_with_abstract = stats['papers_with_abstract']
+    coverage_rate = total_with_abstract / total_papers * 100 if total_papers > 0 else 0
 
-    print("\n=== By Conference ===")
-    for conf, conf_stats in stats['conferences'].items():
-        print(f"  {conf}: {conf_stats['papers']} papers ({conf_stats['with_abstract']} with abstract)")
+    print("\n" + "=" * 70)
+    print("                     CCF-A 会议论文统计概览")
+    print("=" * 70)
+
+    # Summary table
+    print(f"\n{'📊 总体统计':<20}")
+    print("-" * 50)
+    print(f"  {'会议数量:':<18} {stats['total_conferences']}")
+    print(f"  {'论文总数:':<18} {total_papers:,}")
+    print(f"  {'有摘要论文:':<18} {total_with_abstract:,}")
+    print(f"  {'完整率:':<18} {coverage_rate:.1f}%")
+
+    # Conference table
+    print(f"\n{'📚 各会议详情':<20}")
+    print("-" * 70)
+    print(f"  {'会议':<10} {'论文数':>10} {'有摘要':>10} {'完整率':>10} {'年份范围':>15}")
+    print("  " + "-" * 66)
+
+    # Sort by paper count
+    sorted_confs = sorted(
+        stats['conferences'].items(),
+        key=lambda x: x[1]['papers'],
+        reverse=True
+    )
+
+    for conf, conf_stats in sorted_confs:
+        papers = conf_stats['papers']
+        with_abstract = conf_stats['with_abstract']
+        rate = with_abstract / papers * 100 if papers > 0 else 0
+        year_range = conf_stats.get('year_range', (0, 0))
+        if isinstance(year_range, tuple):
+            year_str = f"{year_range[0]}-{year_range[1]}"
+        else:
+            year_str = str(year_range)
+
+        print(f"  {conf.upper():<10} {papers:>10,} {with_abstract:>10,} {rate:>9.1f}% {year_str:>15}")
+
+    print("  " + "-" * 66)
+    total_row = f"  {'总计':<10} {total_papers:>10,} {total_with_abstract:>10,} {coverage_rate:>9.1f}% {'-':>15}"
+    print(total_row)
+    print("=" * 70)
 
 
 def analyze_conference(args):
