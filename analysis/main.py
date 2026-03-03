@@ -97,10 +97,10 @@ def show_statistics(args):
 
     # Conference table - grouped by category
     print(f"\n{'📚 各会议详情':<10}")
-    print("-" * 58)
-    # Header: 类别(4) 会议(6) 论文数(8右) 有摘要(8右) 完整率(6右) 年份(10)
-    print("  类别   会议        论文数    有摘要    完整率   年份范围")
-    print("  " + "-" * 54)
+    print("-" * 56)
+    # Header: 类别(4) 会议(6) 论文数(7) 有摘要(7) 完整率(6) 年份(10)
+    print("  类别   会议    论文数   有摘要   完整率   年份范围")
+    print("  " + "-" * 52)
 
     # Group conferences by category
     conf_by_category = {}
@@ -129,14 +129,14 @@ def show_statistics(args):
 
             # Show category only on first row of each group
             cat_display = category if i == 0 else " " * 4
-            print(f"  {cat_display:<4} {conf.upper():<10} {papers:>8,} {with_abstract:>8,} {rate:>5.1f}%  {year_str}")
+            print(f"  {cat_display:<6} {conf.upper():<6} {papers:>7,} {with_abstract:>8,} {rate:>6.1f}%   {year_str}")
 
         # Add blank line after each category group
         print()
 
-    print("  " + "-" * 54)
-    print(f"  总计   -           {total_papers:>8,} {total_with_abstract:>8,} {coverage_rate:>5.1f}%  -")
-    print("=" * 58)
+    print("  " + "-" * 52)
+    print(f"  总计   -       {total_papers:>6,} {total_with_abstract:>8,} {coverage_rate:>5.1f}%      -")
+    print("=" * 56)
 
 
 def analyze_conference(args):
