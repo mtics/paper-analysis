@@ -343,7 +343,7 @@ class DeepDomainAnalyzer:
             data_dir: Path to paper data directory
         """
         if data_dir is None:
-            root_dir = Path(__file__).parent.parent
+            root_dir = Path(__file__).parent.parent.parent.parent
             data_dir = root_dir / "data" / "paper"
 
         self.data_dir = Path(data_dir)
