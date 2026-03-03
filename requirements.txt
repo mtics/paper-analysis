@@ -29,6 +29,10 @@ sentence-transformers>=2.2.0   # allenai-specter / all-MiniLM-L6-v2
 # ── Optional: advanced community detection ───────────────────────────────
 # cdlib>=0.3.0          # Leiden algorithm (better than Louvain for large graphs)
 
+# ── Visualization ───────────────────────────────────────────────────────
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
 # ── Optional: interactive network visualization ───────────────────────────
 pyvis>=0.3.2            # NetworkX → interactive HTML via vis.js
 

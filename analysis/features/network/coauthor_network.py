@@ -99,7 +99,7 @@ class CoauthorNetworkAnalyzer:
         self,
         G: nx.Graph,
         top_n: int = 20,
-        min_weight: int = 2
+        min_weight: int = 3
     ) -> List[Dict]:
         """
         识别高 betweenness centrality 的桥接者
@@ -123,10 +123,12 @@ class CoauthorNetworkAnalyzer:
         G.remove_nodes_from(list(nx.isolates(G)))
         logger.info(f"Network after pruning: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
 
-        # 如果图太大，使用近似算法
-        if G.number_of_nodes() > 50000:
+        # 如果图超过 10000 节点，使用近似算法加速
+        if G.number_of_nodes() > 10000:
             logger.warning(f"Large network ({G.number_of_nodes()} nodes), using approximate betweenness")
-            betweenness = nx.betweenness_centrality(G, k=min(1000, G.number_of_nodes() // 10))
+            # 使用采样计算近似介数中心性
+            k = min(500, G.number_of_nodes() // 20)  # 采样 500 个节点或 5%
+            betweenness = nx.betweenness_centrality(G, k=k)
         else:
             betweenness = nx.betweenness_centrality(G)
 
