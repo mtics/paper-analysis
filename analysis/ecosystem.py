@@ -359,3 +359,82 @@ class TechnologyDiffusion:
             "origin_year": origin_year,
             "diffusion_path": diffusion_path
         }
+
+
+class KnowledgeFlowGraph:
+    """知识流动有向图 - 量化领域间的词汇借用关系"""
+
+    def __init__(self, pmi_threshold: float = 0.5):
+        """
+        Args:
+            pmi_threshold: PMI 阈值，超过该值认为存在知识流动
+        """
+        self.pmi_threshold = pmi_threshold
+
+    def build_graph(
+        self,
+        papers: List,
+        domains: Dict[str, List[str]]  # {domain: [keywords]}
+    ) -> "nx.DiGraph":
+        """
+        构建知识流动有向图
+
+        Args:
+            papers: 论文列表
+            domains: 领域定义 {领域名: [关键词列表]}
+
+        Returns:
+            NetworkX DiGraph
+        """
+        import networkx as nx
+
+        # 统计领域词汇在每篇论文中的出现 (使用索引避免 hash 问题)
+        domain_word_counts = {d: 0 for d in domains}
+        paper_domain_match: Dict[int, Dict[str, bool]] = {}
+
+        for idx, paper in enumerate(papers):
+            if not paper.has_abstract or not paper.abstract:
+                continue
+            text = (paper.title + " " + paper.abstract).lower()
+
+            match = {d: False for d in domains}
+            for domain, keywords in domains.items():
+                for kw in keywords:
+                    if kw.lower() in text:
+                        domain_word_counts[domain] += 1
+                        match[domain] = True
+            paper_domain_match[idx] = match
+
+        # 计算领域间的 PMI
+        total_papers = len(paper_domain_match)
+        G = nx.DiGraph()
+
+        for source_domain in domains:
+            for target_domain in domains:
+                if source_domain == target_domain:
+                    continue
+
+                # 计算条件概率
+                source_count = sum(1 for matches in paper_domain_match.values() if matches[source_domain])
+                target_count = sum(1 for matches in paper_domain_match.values() if matches[target_domain])
+                joint_count = sum(1 for matches in paper_domain_match.values()
+                                  if matches[source_domain] and matches[target_domain])
+
+                if source_count > 0 and target_count > 0 and joint_count > 0:
+                    pmi = np.log((joint_count * total_papers) / (source_count * target_count))
+
+                    if pmi > self.pmi_threshold:
+                        G.add_edge(source_domain, target_domain, weight=round(pmi, 3))
+
+        return G
+
+    def export_html(self, G: "nx.DiGraph", output_path: str):
+        """导出为 PyVis 交互式 HTML"""
+        try:
+            from pyvis.network import Network
+            net = Network(directed=True)
+            net.from_nx(G)
+            net.save_graph(output_path)
+            logger.info(f"Knowledge flow graph saved to {output_path}")
+        except ImportError:
+            logger.warning("pyvis not installed, skipping HTML export")
