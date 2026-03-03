@@ -9,7 +9,7 @@ from typing import List, Dict, Tuple, Optional
 from dataclasses import dataclass
 from collections import Counter, defaultdict
 
-from analysis.stats_utils import mann_kendall_test
+from analysis.features.trends.stats_utils import mann_kendall_test
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -390,7 +390,7 @@ def generate_trend_report(papers: List, conference_name: str) -> TrendReport:
 
 if __name__ == "__main__":
     # Test trend analysis
-    from analysis.data_loader import PaperDataLoader
+    from analysis.core.data_loader import PaperDataLoader
 
     loader = PaperDataLoader()
 

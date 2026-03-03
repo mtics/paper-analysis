@@ -1,7 +1,7 @@
 # tests/test_ecosystem.py
 
 import pytest
-from analysis.ecosystem import (
+from analysis.features.ecosystem import (
     VocabularyTimeline,
     ConferenceSimilarityMatrix,
     TechnologyDiffusion,

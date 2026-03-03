@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 """
 Analysis CLI for CCF conference papers.
+
+Architecture:
+- cli: Command-line interface
+- core: Data models and loaders
+- features: Analysis features (preprocessing, trends, topics, ecosystem, network, deep)
+- utils: Logging and output management
 """
 
 import os
@@ -13,18 +19,23 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from analysis.data_loader import PaperDataLoader, load_papers_for_analysis
-from analysis.preprocessing import TextPreprocessor
-from analysis.topic_model import DomainClassifier, TopicModeler, SubtopicAnalyzer, classify_papers_by_domain
-from analysis.trend_analysis import TrendAnalyzer, ComparativeAnalyzer, generate_trend_report
-from analysis.deep_domain import DeepDomainAnalyzer, format_report, DOMAIN_DEFINITIONS, analyze_vocabulary_turnover
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+# Import from new hierarchical structure
+from analysis.core import PaperDataLoader, load_papers_for_analysis
+from analysis.features.preprocessing import TextPreprocessor
+from analysis.features.topics import DomainClassifier, TopicModeler, SubtopicAnalyzer, classify_papers_by_domain
+from analysis.features.trends import TrendAnalyzer, ComparativeAnalyzer, generate_trend_report
+from analysis.features.deep import (
+    DeepDomainAnalyzer, format_report, DOMAIN_DEFINITIONS, analyze_vocabulary_turnover,
+    LifecycleAnalyzer, ResearcherStabilityAnalyzer
 )
-logger = logging.getLogger(__name__)
+from analysis.features.ecosystem import VocabularyTimeline, ConferenceSimilarityMatrix, TechnologyDiffusion
+from analysis.features.network import CoauthorNetworkAnalyzer
+
+# Use unified logging system
+from analysis.utils import setup_logger, get_logger, OutputManager
+
+# Setup logger
+logger = setup_logger('analysis')
 
 
 def list_conferences(args):
@@ -109,25 +120,22 @@ def analyze_conference(args):
 
     # Save detailed report
     if args.output:
-        output_path = Path(args.output)
-        output_path.mkdir(parents=True, exist_ok=True)
+        output_mgr = OutputManager(Path(args.output))
 
         report = generate_trend_report(papers, args.conference)
 
-        # Save JSON report
-        report_file = output_path / f"{args.conference}_report.json"
-        with open(report_file, 'w') as f:
-            json.dump({
-                'conference': report.conference,
-                'year_range': report.year_range,
-                'total_papers': report.total_papers,
-                'papers_with_abstract': report.papers_with_abstract,
-                'yearly_counts': report.yearly_counts,
-                'domain_distribution': report.domain_distribution,
-                'top_keywords': report.top_keywords
-            }, f, indent=2)
+        report_data = {
+            'conference': report.conference,
+            'year_range': report.year_range,
+            'total_papers': report.total_papers,
+            'papers_with_abstract': report.papers_with_abstract,
+            'yearly_counts': report.yearly_counts,
+            'domain_distribution': report.domain_distribution,
+            'top_keywords': report.top_keywords
+        }
 
-        print(f"\nReport saved to: {report_file}")
+        filepath = output_mgr.save_json(report_data, 'trends', f"{args.conference}_report.json")
+        print(f"\nReport saved to: {filepath}")
 
 
 def analyze_domain(args):
@@ -212,10 +220,7 @@ def compare_conferences(args):
 
 
 def deep_analyze_domain(args):
-    """Perform deep domain analysis."""
-    # Import lifecycle analyzers here as per task requirements
-    from analysis.lifecycle import LifecycleAnalyzer, ResearcherStabilityAnalyzer
-
+    """Perform deep domain analysis with lifecycle, researcher stability, and vocabulary turnover."""
     # Show available domains
     if args.list_domains:
         print("\n=== Available Domain Definitions ===")
@@ -318,8 +323,7 @@ def deep_analyze_domain(args):
 
     # Save to file if requested
     if args.output:
-        output_path = Path(args.output)
-        output_path.mkdir(parents=True, exist_ok=True)
+        output_mgr = OutputManager(Path(args.output))
 
         # Convert report to dict
         report_dict = {
@@ -355,12 +359,9 @@ def deep_analyze_domain(args):
             }
         }
 
-        # Save JSON
-        json_file = output_path / f"{args.domain.lower().replace(' ', '_')}_analysis.json"
-        with open(json_file, 'w', encoding='utf-8') as f:
-            json.dump(report_dict, f, indent=2, ensure_ascii=False)
-
-        print(f"\n📁 Report saved to: {json_file}")
+        # Save JSON to deep category
+        filepath = output_mgr.save_json(report_dict, 'deep', f"{args.domain.lower().replace(' ', '_')}_analysis.json")
+        print(f"\n📁 Report saved to: {filepath}")
 
 
 def interactive_mode(args):
@@ -380,11 +381,11 @@ def interactive_mode(args):
                 print("""
 Available commands:
   conferences      - List available conferences
-  stats            - Show overall statistics
-  analyze <conf>   - Analyze a conference
-  domain <name>    - Analyze a domain
+  stats           - Show overall statistics
+  analyze <conf>  - Analyze a conference
+  domain <name>   - Analyze a domain
   compare <conf1 conf2 ...> - Compare conferences
-  exit             - Exit
+  exit            - Exit
                 """)
             elif cmd == "conferences":
                 list_conferences(args)
@@ -418,9 +419,6 @@ Available commands:
 
 def timeline_mode(args):
     """Run vocabulary timeline analysis."""
-    from analysis.ecosystem import VocabularyTimeline
-    from analysis.data_loader import load_papers_for_analysis
-
     # Parse conferences
     conferences = None
     if args.conferences:
@@ -440,23 +438,20 @@ def timeline_mode(args):
 
     # Save if output specified
     if args.output:
-        output_path = Path(args.output)
-        output_path.mkdir(parents=True, exist_ok=True)
-        df.to_csv(output_path / "vocabulary_timeline.csv", index=False)
+        output_mgr = OutputManager(Path(args.output))
 
-        # Save paradigm shifts
+        # Save CSV
+        csv_path = output_mgr.save_csv(df.to_dict('records'), 'ecosystem', 'vocabulary_timeline.csv')
+
+        # Save paradigm shifts as JSON
         shifts = analyzer.get_paradigm_shifts(df, top_n=20)
-        with open(output_path / "paradigm_shifts.json", 'w') as f:
-            json.dump(shifts, f, indent=2)
+        json_path = output_mgr.save_json(shifts, 'ecosystem', 'paradigm_shifts.json')
 
-        print(f"\nSaved to: {output_path}")
+        print(f"\nSaved to: {output_mgr.base_dir}")
 
 
 def ecosystem_mode(args):
     """Run full ecosystem analysis."""
-    from analysis.ecosystem import VocabularyTimeline, ConferenceSimilarityMatrix, TechnologyDiffusion
-    from analysis.data_loader import load_papers_for_analysis
-
     # Parse conferences
     conferences = None
     if args.conferences:
@@ -472,16 +467,12 @@ def ecosystem_mode(args):
     # (can be extended based on needs)
 
     if args.output:
-        output_path = Path(args.output)
-        output_path.mkdir(parents=True, exist_ok=True)
-        print(f"Results would be saved to: {output_path}")
+        output_mgr = OutputManager(Path(args.output))
+        print(f"Results would be saved to: {output_mgr.base_dir}")
 
 
 def network_mode(args):
     """Run coauthor network analysis."""
-    from analysis.network_analysis import CoauthorNetworkAnalyzer
-    from analysis.data_loader import load_papers_for_analysis
-
     # Parse conferences
     conferences = None
     if args.conferences:
@@ -499,10 +490,9 @@ def network_mode(args):
     print(df.to_string())
 
     if args.output:
-        output_path = Path(args.output)
-        output_path.mkdir(parents=True, exist_ok=True)
-        df.to_csv(output_path / "network_evolution.csv", index=False)
-        print(f"\nSaved to: {output_path}")
+        output_mgr = OutputManager(Path(args.output))
+        csv_path = output_mgr.save_csv(df.to_dict('records'), 'network', 'network_evolution.csv')
+        print(f"\nSaved to: {output_mgr.base_dir}")
 
 
 def main():

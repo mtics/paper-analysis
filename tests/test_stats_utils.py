@@ -1,7 +1,7 @@
 # tests/test_stats_utils.py
 
 import pytest
-from analysis.stats_utils import mann_kendall_test, normalize_yearly_counts, calculate_growth_rate
+from analysis.features.trends.stats_utils import mann_kendall_test, normalize_yearly_counts, calculate_growth_rate
 
 
 class TestMannKendall:

@@ -1,8 +1,8 @@
 # tests/test_lifecycle.py
 
 import pytest
-from analysis.lifecycle import LifecycleAnalyzer, ResearcherStabilityAnalyzer, logistic
-from analysis.data_loader import Paper
+from analysis.features.deep import LifecycleAnalyzer, ResearcherStabilityAnalyzer, logistic
+from analysis.core import Paper
 import numpy as np
 
 

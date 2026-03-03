@@ -11,7 +11,7 @@ from pathlib import Path
 import pickle
 import hashlib
 
-from analysis.ngram_extractor import NgramExtractor
+from analysis.features.preprocessing.ngram_extractor import NgramExtractor
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

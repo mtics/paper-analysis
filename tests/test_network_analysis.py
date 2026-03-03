@@ -1,7 +1,7 @@
 # tests/test_network_analysis.py
 
 import pytest
-from analysis.network_analysis import CoauthorNetworkAnalyzer
+from analysis.features.network import CoauthorNetworkAnalyzer
 
 
 class TestCoauthorNetworkAnalyzer:

@@ -1,7 +1,7 @@
 # tests/test_ngram_extractor.py
 
 import pytest
-from analysis.ngram_extractor import NgramExtractor, extract_ngrams
+from analysis.features.preprocessing import NgramExtractor, extract_ngrams
 
 
 class TestNgramExtractor:

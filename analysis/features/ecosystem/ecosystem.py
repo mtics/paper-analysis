@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 
 if TYPE_CHECKING:
-    from analysis.data_loader import Paper
+    from analysis.core.data_loader import Paper
 
 logger = logging.getLogger(__name__)
 
