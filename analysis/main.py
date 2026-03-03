@@ -98,7 +98,7 @@ def show_statistics(args):
     # Conference table - grouped by category
     print(f"\n{'📚 各会议详情':<10}")
     print("-" * 85)
-    print(f"  {'类别':<6} {'会议':<6} {'论文数':>6} {'有摘要':>8} {'完整率':>6} {'年份范围':>10}")
+    print(f"  {'类别':<6} {'会议':<4} {'论文数':>6} {'有摘要':>8} {'完整率':>6} {'年份范围':>10}")
     print("  " + "-" * 81)
 
     # Group conferences by category
@@ -128,7 +128,7 @@ def show_statistics(args):
 
             # Show category only on first row of each group
             cat_display = category if i == 0 else ""
-            print(f"  {cat_display:<8} {conf.upper():<12} {papers:>6,} {with_abstract:>8,} {rate:>6.1f}% {year_str:>10}")
+            print(f"  {cat_display:<6} {conf.upper():<12} {papers:>4,} {with_abstract:>10,} {rate:>8.1f}% {year_str:>12}")
 
         # Add blank line after each category group
         print()

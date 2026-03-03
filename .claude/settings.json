@@ -41,7 +41,8 @@
       "Bash(python -m analysis timeline --years 2018,2019,2020,2021,2022 --top-n 30)",
       "Bash(python -m analysis network --years 2020,2021,2022)",
       "Bash(ls -la \"e:\\\\OneDrive - UTS\\\\Workspace\\\\Code\\\\Research\\\\ccf-analysis\\\\analysis\"\" | grep -E \"lifecycle)",
-      "Bash(deep_domain \")"
+      "Bash(deep_domain \")",
+      "Bash(python analysis/analyze_vocabulary_temp.py)"
     ],
     "additionalDirectories": [
       "\\tmp"
