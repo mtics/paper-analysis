@@ -275,3 +275,87 @@ class ConferenceSimilarityMatrix:
 
         pairs.sort(key=lambda x: x["delta"], reverse=True)
         return pairs[:top_n]
+
+
+class TechnologyDiffusion:
+    """技术扩散路径 - 量化技术在各会议间的传播延迟"""
+
+    def __init__(self, threshold: int = 10):
+        """
+        Args:
+            threshold: 判断"达到该会议"的年度论文数量阈值
+        """
+        self.threshold = threshold
+
+    def analyze_term(
+        self,
+        term: str,
+        papers: List,
+        conferences: List[str]
+    ) -> Dict:
+        """
+        分析特定技术术语在各会议的扩散路径
+
+        Args:
+            term: 技术术语
+            papers: 论文列表
+            conferences: 会议列表
+
+        Returns:
+            {
+                "term": str,
+                "origin_conf": str,
+                "origin_year": int,
+                "diffusion_path": [
+                    {"conf": str, "year": int, "delay": int},
+                    ...
+                ]
+            }
+        """
+        # 统计每个会议每年的论文数
+        term = term.lower()
+        conf_year_counts: Dict[str, Dict[int, int]] = defaultdict(lambda: defaultdict(int))
+
+        for paper in papers:
+            if not paper.has_abstract or not paper.abstract:
+                continue
+            text = (paper.title + " " + paper.abstract).lower()
+            if term in text:
+                conf_year_counts[paper.venue][paper.year] += 1
+
+        # 找出首次达到阈值的年份
+        first_year_by_conf: Dict[str, int] = {}
+        for conf in conferences:
+            year_counts = conf_year_counts[conf]
+            for year in sorted(year_counts.keys()):
+                if year_counts[year] >= self.threshold:
+                    first_year_by_conf[conf] = year
+                    break
+
+        if not first_year_by_conf:
+            return {
+                "term": term,
+                "origin_conf": None,
+                "origin_year": None,
+                "diffusion_path": []
+            }
+
+        # 找到起源会议
+        origin_conf = min(first_year_by_conf, key=first_year_by_conf.get)
+        origin_year = first_year_by_conf[origin_conf]
+
+        # 构建扩散路径
+        diffusion_path = []
+        for conf in sorted(first_year_by_conf.keys(), key=lambda c: first_year_by_conf[c]):
+            diffusion_path.append({
+                "conf": conf,
+                "year": first_year_by_conf[conf],
+                "delay": first_year_by_conf[conf] - origin_year
+            })
+
+        return {
+            "term": term,
+            "origin_conf": origin_conf,
+            "origin_year": origin_year,
+            "diffusion_path": diffusion_path
+        }
