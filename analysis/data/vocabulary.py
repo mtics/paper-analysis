@@ -61,11 +61,14 @@ STOPWORDS = {
     'specific', 'general', 'specific', 'particular', 'certain', 'several',
 
     # Technical but meaningless in analysis (high frequency from analysis)
+    # These are too generic for meaningful keyword analysis
     'study', 'studies', 'research', 'analysis', 'analysises', 'problem',
-    'problems', 'solution', 'solutions', 'model', 'models', 'system', 'systems',
+    'problems', 'solution', 'solutions', 'system', 'systems',
     'framework', 'frameworks', 'algorithm', 'algorithms', 'technique', 'techniques',
-    'task', 'tasks', 'data', 'dataset', 'datasets', 'performance', 'accuracy',
-    'learning', 'training', 'trained', 'test', 'testing', 'tested',
+    'task', 'tasks', 'dataset', 'datasets',
+    'model', 'models',  # Too generic - appears in almost every paper
+    'data',  # Too generic
+    'trained', 'tested',
     'experiments', 'experiment', 'evaluation', 'evaluations',
     'benchmark', 'benchmarks', 'baseline', 'baselines',
     'demonstrate', 'demonstrated', 'demonstrates', 'demonstrating',
@@ -118,14 +121,12 @@ STOPWORDS = {
     'conference', 'journal', 'proceedings', 'acm', 'ieee', 'arxiv', 'preprint',
 
     # Additional high-frequency but uninformative terms from analysis
-    'state', 'art', 'large', 'knowledge', 'image', 'images', 'text', 'graph',
-    'domain', 'human', 'features', 'feature', 'semantic', 'detection',
-    'reasoning', 'representation', 'representations', 'visual', 'classification',
-    'prediction', 'translation', 'recognition', 'optimization', 'inference',
-    'generation', 'generation', 'label', 'labels', 'labeling',
-    'source', 'sources', 'target', 'targets', 'question', 'questions',
-    'user', 'users', 'quality', 'space', 'temporal', 'real', 'world',
-    'level', 'set', 'sets', 'cross', 'context', 'fine', 'scale', 'scales',
+    # Keep core research terms: image, text, graph, semantic, detection, etc.
+    'state', 'art', 'large', 'knowledge',
+    'domain', 'human',  # Keep features, semantic, detection, etc.
+    'source', 'sources', 'target', 'targets',
+    'quality', 'temporal', 'real', 'world',
+    'level', 'set', 'sets', 'cross', 'fine', 'scale', 'scales',
     'address', 'design', 'applications', 'understanding', 'available',
 
     # More analysis artifacts (additional from execution log)
@@ -150,6 +151,72 @@ STOPWORDS = {
     'information', 'regarding', 'concerning',
     'terms', 'conditions', 'respect', 'instance',
     'potential', 'potentially', 'significantly',
+
+    # Additional generic terms from full analysis (129k papers)
+    'time',  # Very generic - "over time", "real-time", etc.
+    'approaches',  # Too generic - used in almost every paper
+    'code',  # "code" as in "source code" but often generic
+    'number',  # Generic quantity term
+    'function',  # Generic in math context
+    'input',  # Generic term
+    'structure',  # Generic term
+    'generalization',  # Can be generic
+    'local',  # Generic spatial term
+    'modeling',  # Generic term
+    'estimation',  # Can be generic
+    'complex',  # Generic adjective
+    'optimal',  # Generic adjective
+    'point',  # Very generic
+    'dynamic',  # Generic adjective
+    'samples',  # Can be generic
+    'search',  # Generic but also specific to IR
+    'latent',  # Specific to ML but can be generic
+
+    # More generic terms from recent analysis
+    'limited',  # Generic adjective
+    'scenarios',  # Generic term
+    'works',  # Generic verb/noun
+
+    # Additional generic terms from full analysis log
+    'diverse',  # Generic adjective
+    'key',  # Too generic
+    'ability',  # Generic
+    'computational',  # Generic adjective
+    'enhance', 'enhanced', 'enhances', 'enhancing',  # Generic verbs
+    'evaluate', 'evaluated', 'evaluates', 'evaluating',  # Generic verbs
+    'designed', 'design', 'designs',  # Generic
+    'simple',  # Generic adjective
+    'focus', 'focused', 'focuses', 'focusing',  # Generic verbs
+    'find', 'finds', 'finding', 'found',  # Generic verbs
+    'combines', 'combine', 'combined', 'combining',  # Generic
+    'precisely',  # Generic adverb
+    'computations',  # Generic noun
+    'rates',  # Generic noun
+    'achieve', 'achieved', 'achieves', 'achieving',  # Generic verbs
+    'successfully',  # Generic adverb
+    'regression',  # Generic but also specific
+    'requirements',  # Generic noun
+    'setting', 'settings',  # Generic noun
+    'basic',  # Generic adjective
+    'costs',  # Generic noun
+    'reducing', 'reduce', 'reduced', 'reduces',  # Generic verbs
+    'provide', 'provides', 'provided', 'providing',  # Generic verbs
+    'also',  # Generic adverb
+    'first',  # Generic ordinal
+    'two',  # Generic number
+    'three',  # Generic number
+
+    # More generic terms from recent output
+    'called',  # Generic verb
+    'capture', 'captures', 'captured', 'capturing',  # Generic verb
+    'mechanism', 'mechanisms',  # Generic noun
+    'global',  # Generic adjective
+    'develop', 'developed', 'developing', 'development',  # Generic verb
+    'domains', 'domain',  # Generic noun
+    'robustness',  # Generic noun
+    'class', 'classes',  # Generic but also specific to ML
+    'student', 'students',  # Generic noun (but can be specific)
+    'called',  # appearing again
 }
 
 # =============================================================================

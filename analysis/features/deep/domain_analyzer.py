@@ -860,8 +860,10 @@ def analyze_vocabulary_turnover(
             words = text.split()
             # Strip punctuation from words
             words = [w.translate(str.maketrans('', '', string.punctuation)) for w in words]
+            # Normalize words (singular/plural) before processing
+            words = [normalize_word(w) for w in words]
             for word in words:
-                if len(word) > 3:
+                if len(word) > 3 and word not in VOCABULARY_STOPWORDS:
                     word_by_year[paper.year][word] += 1
 
     # 计算每个词的趋势

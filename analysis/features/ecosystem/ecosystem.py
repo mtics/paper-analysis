@@ -6,6 +6,8 @@ from collections import defaultdict
 import pandas as pd
 import numpy as np
 
+from analysis.data.vocabulary import STOPWORDS as VOCABULARY_STOPWORDS, normalize_word
+
 if TYPE_CHECKING:
     from analysis.core.data_loader import Paper
 
@@ -58,8 +60,10 @@ class VocabularyTimeline:
             words = text.split()
             # Strip punctuation from words
             words = [w.translate(str.maketrans('', '', string.punctuation)) for w in words]
+            # Normalize words (singular/plural) before processing
+            words = [normalize_word(w) for w in words]
             for word in words:
-                if len(word) > 3:  # 过滤短词
+                if len(word) > 3 and word not in VOCABULARY_STOPWORDS:  # 过滤短词和停用词
                     phrase_by_conf_year[word][conf][year] += 1
 
         # 2. 构建时间轴数据
@@ -131,12 +135,14 @@ class VocabularyTimeline:
                 "spread_speed": spread_speed,
                 "trajectory": trajectory,
                 "origin_conf": origin_conf,
-                "yearly_counts": dict(yearly_total)
+                "yearly_counts": dict(yearly_total),
+                "total_count": sum(yearly_total.values())  # Add total count for sorting
             })
 
         df = pd.DataFrame(results)
-        if not df.empty and "spread_speed" in df.columns:
-            df = df.sort_values("spread_speed")
+        # Sort by total count (most popular first)
+        if not df.empty and "total_count" in df.columns:
+            df = df.sort_values("total_count", ascending=False)
         return df
 
     def get_paradigm_shifts(self, df: pd.DataFrame, top_n: int = 20) -> List[Dict]:
@@ -187,10 +193,11 @@ class ConferenceSimilarityMatrix:
         from sklearn.metrics.pairwise import cosine_similarity
         import numpy as np
 
-        # 按会议聚合论文文本
+        # 按会议聚合论文文本 (case-insensitive)
         conf_texts = {}
         for conf in conferences:
-            conf_papers = [p for p in papers if p.venue == conf and p.year in years]
+            conf_lower = conf.lower()
+            conf_papers = [p for p in papers if p.venue.lower() == conf_lower and p.year in years]
             texts = []
             for p in conf_papers:
                 text = p.title

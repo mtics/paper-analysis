@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from collections import Counter, defaultdict
 
 from analysis.features.trends.stats_utils import mann_kendall_test
-from analysis.data.vocabulary import STOPWORDS as VOCABULARY_STOPWORDS, SYNONYMS
+from analysis.data.vocabulary import STOPWORDS as VOCABULARY_STOPWORDS, SYNONYMS, normalize_word
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -102,6 +102,8 @@ class TrendAnalyzer:
             words = text.lower().split()
             # Strip punctuation from words
             words = [w.translate(str.maketrans('', '', string.punctuation)) for w in words]
+            # Normalize words (singular/plural) before filtering
+            words = [normalize_word(w) for w in words]
             words = [w for w in words if len(w) > 2 and w not in stopwords]
 
             for word in set(words):  # Use set to count unique words per paper
@@ -237,7 +239,7 @@ class TrendAnalyzer:
             'years': years,
             'top_venues': top_venues,
             'venue_trends': venue_trends,
-            'venue_totals': dict(venue_totals.most_common(20))
+            'venue_totals': dict(venue_totals.most_common(50))
         }
 
     def analyze_abstract_coverage(self, papers: List) -> Dict:
@@ -320,13 +322,15 @@ class ComparativeAnalyzer:
                 for p in papers
             ])
             words = text.lower().split()
-            # Strip punctuation from words before filtering
+            # Strip punctuation from words
             import string
             words = [w.translate(str.maketrans('', '', string.punctuation)) for w in words]
+            # Normalize words (singular/plural) before filtering
+            words = [normalize_word(w) for w in words]
             # Use vocabulary module for stopwords
             words = [w for w in words if len(w) > 2 and w not in VOCABULARY_STOPWORDS]
             word_counts = Counter(words)
-            comparison['top_keywords'][conf_name] = dict(word_counts.most_common(20))
+            comparison['top_keywords'][conf_name] = dict(word_counts.most_common(50))
 
         return comparison
 

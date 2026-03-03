@@ -164,9 +164,9 @@ def analyze_conference(args):
 
     # Keyword trends
     if args.keywords:
-        keywords = analyzer.analyze_keyword_trends(papers, top_n=20)
+        keywords = analyzer.analyze_keyword_trends(papers, top_n=50)
         print("\n=== Top Keywords ===")
-        for kw, count in list(keywords['keyword_total'].items())[:20]:
+        for kw, count in list(keywords['keyword_total'].items())[:50]:
             print(f"  {kw}: {count}")
 
     # Emerging keywords
@@ -245,9 +245,9 @@ def analyze_domain(args):
         print(f"  {year}: {yearly['paper_counts'][i]} papers")
 
     # Keyword trends
-    keywords = analyzer.analyze_keyword_trends(domain_papers, top_n=30)
+    keywords = analyzer.analyze_keyword_trends(domain_papers, top_n=50)
     print("\n=== Top Keywords ===")
-    for kw, count in list(keywords['keyword_total'].items())[:20]:
+    for kw, count in list(keywords['keyword_total'].items())[:50]:
         print(f"  {kw}: {count}")
 
     # Emerging keywords
@@ -287,7 +287,7 @@ def compare_conferences(args):
     print("\n=== Keyword Comparison ===")
     for conf in args.conferences:
         print(f"\n{conf.upper()}:")
-        for kw in list(comparison['top_keywords'][conf].keys())[:10]:
+        for kw in list(comparison['top_keywords'][conf].keys())[:50]:
             print(f"  {kw}: {comparison['top_keywords'][conf][kw]}")
 
 
@@ -574,6 +574,7 @@ def full_analysis(args):
     """
     from datetime import datetime
     import time
+    import logging
 
     # Setup output - use project root (analysis/main.py -> analysis/ -> project/)
     project_root = Path(__file__).parent.parent
@@ -612,6 +613,10 @@ def full_analysis(args):
     print(f"📚 分析会议: {', '.join(conferences) if conferences else '全部 CCF-A'}")
     print(f"📁 输出目录: {output_path}")
     print(f"🕐 开始时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+    # Record start time for elapsed duration calculation
+    start_time = time.time()
+
     print("\n" + "-" * 70)
 
     # Load papers
@@ -659,18 +664,19 @@ def full_analysis(args):
     print("-" * 70)
 
     trend_analyzer = TrendAnalyzer()
-    keyword_trends = trend_analyzer.analyze_keyword_trends(papers, top_n=30)
+    keyword_trends = trend_analyzer.analyze_keyword_trends(papers, top_n=500)
 
-    print(f"\n   高频关键词 (Top 20):")
-    for i, (kw, count) in enumerate(list(keyword_trends['keyword_total'].items())[:20], 1):
+    print(f"\n   高频关键词 (Top 50):")
+    for i, (kw, count) in enumerate(list(keyword_trends['keyword_total'].items())[:50], 1):
         print(f"   {i:>2}. {kw:<20} {count:>5}")
 
     print(f"\n   新兴关键词 (增长最快):")
     for kw, growth in keyword_trends['emerging_keywords'][:10]:
         print(f"   + {kw:<20} {growth*100:>6.1f}%")
 
-    results['top_keywords'] = dict(list(keyword_trends['keyword_total'].items())[:30])
-    results['emerging_keywords'] = keyword_trends['emerging_keywords'][:20]
+    # Save full keywords (not truncated)
+    results['top_keywords'] = keyword_trends['keyword_total']
+    results['emerging_keywords'] = keyword_trends['emerging_keywords']
 
     # 3. Ecosystem Analysis
     print("\n" + "-" * 70)
@@ -681,38 +687,66 @@ def full_analysis(args):
     vocab_timeline = VocabularyTimeline(min_count=10)
     vocab_df = vocab_timeline.analyze(papers, top_n=50)
 
-    print(f"\n   热门技术短语 (Top 20):")
-    for i, row in vocab_df.head(20).iterrows():
-        phrase = row['phrase']
-        first_year = row.get('first_year', 'N/A')
-        trend = row.get('trend', 0)
-        trend_str = f"+{trend:.1f}" if trend > 0 else f"{trend:.1f}"
-        print(f"   {i:>2}. {phrase:<25} 首次: {first_year}  趋势: {trend_str}")
+    print(f"\n   热门技术短语 (Top 50):")
+    for i, row in enumerate(vocab_df.head(50).itertuples()):
+        phrase = row.phrase
+        first_year = row.first_year
+        trajectory = row.trajectory
+        # Use trajectory as trend indicator
+        trend_indicator = {"rising": "+", "declining": "-", "peaked": "~", "niche": "="}.get(trajectory, "?")
+        print(f"   {i+1:>2}. {phrase:<25} 首次: {first_year}  趋势: {trend_indicator} ({trajectory})")
 
     results['vocabulary_timeline'] = vocab_df.to_dict('records')
 
-    # Conference similarity (skip if too slow)
-    print(f"\n   会议相似度 (Top 5 相似对):")
+    # Conference similarity matrix
+    print(f"\n   会议相似度矩阵:")
     try:
         conf_sim = ConferenceSimilarityMatrix()
         # Get unique conferences from papers
         conf_list = list(set(p.venue.lower() for p in papers))
-        sim_matrix, conf_names = conf_sim.compute_similarity(papers, conf_list, years)
 
-        # Get top similar pairs
-        similar_pairs = []
-        for i, conf1 in enumerate(conf_names):
-            for j, conf2 in enumerate(conf_names):
-                if i < j:
-                    similar_pairs.append((conf1, conf2, sim_matrix[i, j]))
+        if len(conf_list) < 2:
+            print(f"   ⚠️ 需要至少2个会议才能计算相似度，当前只有: {conf_list}")
+            results['conference_similarity'] = {}
+        else:
+            sim_matrix, conf_names = conf_sim.compute_similarity(papers, conf_list, years)
 
-        similar_pairs.sort(key=lambda x: x[2], reverse=True)
-        for conf1, conf2, sim in similar_pairs[:5]:
-            print(f"   {conf1.upper()} ↔ {conf2.upper()}: {sim:.3f}")
+            # Format conference names for display (short names)
+            short_names = [c.upper()[:8] for c in conf_names]
 
-        results['conference_similarity'] = {f"{p[0]}-{p[1]}": p[2] for p in similar_pairs[:10]}
+            # Print header
+            print(f"\n   {'Conference':<12}", end="")
+            for name in short_names:
+                print(f" {name:>8}", end="")
+            print()
+            print(f"   {'-'*12}", end="")
+            for _ in short_names:
+                print(f" {'-'*8}", end="")
+            print()
+
+            # Print matrix rows
+            for i, name in enumerate(short_names):
+                print(f"   {name:<12}", end="")
+                for j in range(len(conf_names)):
+                    if i == j:
+                        print(f" {'-'*8}", end="")
+                    else:
+                        print(f" {sim_matrix[i, j]:>8.3f}", end="")
+                print()
+
+            # Store similarity data
+            similar_pairs = []
+            for i, conf1 in enumerate(conf_names):
+                for j, conf2 in enumerate(conf_names):
+                    if i < j:
+                        similar_pairs.append((conf1, conf2, sim_matrix[i, j]))
+
+            similar_pairs.sort(key=lambda x: x[2], reverse=True)
+            results['conference_similarity'] = {f"{p[0]}-{p[1]}": p[2] for p in similar_pairs[:10]}
     except Exception as e:
+        import traceback
         print(f"   ⚠️ 会议相似度计算跳过: {str(e)[:50]}")
+        print(f"   详细错误: {traceback.format_exc(limit=3)}")
         results['conference_similarity'] = {}
 
     # 4. Network Analysis
@@ -723,29 +757,64 @@ def full_analysis(args):
     network_analyzer = CoauthorNetworkAnalyzer()
     G = network_analyzer.build_graph(papers)
 
-    print(f"\n   网络规模:")
-    print(f"     节点数 (作者): {G.number_of_nodes()}")
-    print(f"     边数 (合作关系): {G.number_of_edges()}")
+    # Original network stats
+    original_nodes = G.number_of_nodes()
+    original_edges = G.number_of_edges()
+    print(f"\n   原始网络规模:")
+    print(f"     节点数 (作者): {original_nodes}")
+    print(f"     边数 (合作关系): {original_edges}")
 
     if G.number_of_nodes() > 0:
-        density = nx.density(G)
-        print(f"     网络密度: {density:.4f}")
+        original_density = nx.density(G)
 
-        # Find bridge researchers (with pruning for large networks)
-        # min_weight=2 keeps only edges where authors co-authored >= 2 papers
-        print(f"\n   正在计算桥接研究者 (剪枝优化中)...")
-        bridges = network_analyzer.find_bridge_researchers(G, min_weight=2)
-        print(f"\n   桥接研究者 (跨领域合作最多):")
-        for author_info in bridges[:10]:
-            author = author_info.get('name', 'Unknown')
-            score = author_info.get('betweenness', 0)
-            print(f"   • {author:<30} 桥接分数: {score:.1f}")
+        # Pruning for large networks
+        # min_weight=3 keeps only edges where authors co-authored >= 3 papers
+        print(f"\n   正在剪枝优化 (保留合作 >= 3 次的边)...")
+        min_weight = 3
+        edges_to_remove = [(u, v) for u, v, w in G.edges(data='weight') if w < min_weight]
+        G_pruned = G.copy()
+        G_pruned.remove_edges_from(edges_to_remove)
+        G_pruned.remove_nodes_from(list(nx.isolates(G_pruned)))
 
+        pruned_nodes = G_pruned.number_of_nodes()
+        pruned_edges = G_pruned.number_of_edges()
+        pruned_density = nx.density(G_pruned) if G_pruned.number_of_nodes() > 0 else 0
+
+        print(f"   剪枝后网络:")
+        print(f"     节点数: {pruned_nodes}")
+        print(f"     边数: {pruned_edges}")
+        print(f"     网络密度: {pruned_density:.4f}")
+
+        # Find bridge researchers on pruned network
+        if pruned_nodes > 0:
+            if pruned_nodes > 10000:
+                betweenness = nx.betweenness_centrality(G_pruned, k=min(500, pruned_nodes // 20))
+            else:
+                betweenness = nx.betweenness_centrality(G_pruned)
+
+            bridges = sorted(betweenness.items(), key=lambda x: x[1], reverse=True)[:20]
+            bridges = [{"name": name, "betweenness": score} for name, score in bridges]
+
+            print(f"\n   桥接研究者 (跨领域合作最多):")
+            for author_info in bridges[:10]:
+                author = author_info.get('name', 'Unknown')
+                score = author_info.get('betweenness', 0)
+                print(f"   • {author:<30} 桥接分数: {score:.4f}")
+
+        # Save pruned network stats (not original)
         results['network_stats'] = {
-            'nodes': G.number_of_nodes(),
-            'edges': G.number_of_edges(),
-            'density': density if G.number_of_nodes() > 0 else 0,
-            'bridge_researchers': bridges[:20]
+            'original_network': {
+                'nodes': original_nodes,
+                'edges': original_edges,
+                'density': original_density
+            },
+            'pruned_network': {
+                'min_weight': min_weight,
+                'nodes': pruned_nodes,
+                'edges': pruned_edges,
+                'density': pruned_density
+            },
+            'bridge_researchers': bridges
         }
 
     # 5. Domain Deep Analysis
@@ -782,14 +851,16 @@ def full_analysis(args):
             print(f"   📄 论文数: {report.total_papers}")
             print(f"   📈 阶段: {lifecycle_result.get('stage', 'unknown')}")
 
-            # Save domain report
+            # Save domain report (top_keywords is dict, convert to list)
+            top_kw_list = list(report.top_keywords.items())[:50] if report.top_keywords else []
+
             domain_report = {
                 'domain': domain,
                 'total_papers': report.total_papers,
                 'yearly_trends': report.yearly_trends,
                 'venue_distribution': report.venue_distribution,
                 'lifecycle': lifecycle_result,
-                'top_keywords': report.top_keywords[:20],
+                'top_keywords': top_kw_list,
                 'subdomains': {
                     name: {
                         'paper_count': sub.paper_count,
@@ -799,9 +870,9 @@ def full_analysis(args):
                 },
                 'representative_papers': [
                     {
-                        'title': p.title[:80],
-                        'year': p.year,
-                        'venue': p.venue
+                        'title': p['title'][:80] if p.get('title') else '',
+                        'year': p.get('year'),
+                        'venue': p.get('venue')
                     }
                     for p in report.representative_papers[:5]
                 ]
@@ -843,10 +914,38 @@ def full_analysis(args):
     if 'network_stats' in results:
         output_mgr.save_json(results['network_stats'], 'network', f'network_{timestamp}.json')
 
+    # Topics / Domain Analysis
+    if 'domain_analysis' in results:
+        output_mgr.save_json(results['domain_analysis'], 'topics', f'topics_{timestamp}.json')
+
     print(f"   各模块报告已保存至: {output_path}")
 
+    # 6. Visualization
+    print("\n" + "-" * 70)
+    print("📊 第六部分：可视化生成")
+    print("-" * 70)
+
+    try:
+        from analysis.features.visualization import DashboardGenerator
+
+        viz_output = output_path / "visualizations"
+        viz_gen = DashboardGenerator(viz_output)
+        dashboard_path = viz_gen.generate(results, papers, timestamp)
+
+        print(f"\n   可视化已保存至: {viz_output}")
+        print(f"   仪表盘: {dashboard_path}")
+    except Exception as e:
+        print(f"\n   ⚠️ 可视化生成跳过: {str(e)[:50]}")
+        import logging
+        logging.warning(f"Visualization failed: {e}")
+
     print("\n" + "=" * 70)
-    print(f"✅ 全流程分析完成! (耗时: {datetime.now().strftime('%H:%M:%S')})")
+    # Calculate elapsed time
+    elapsed = int(time.time() - start_time)
+    hours, remainder = divmod(elapsed, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    elapsed_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+    print(f"✅ 全流程分析完成! (耗时: {elapsed_str})")
     print("=" * 70)
 
 
