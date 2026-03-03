@@ -1,10 +1,13 @@
 # analysis/ecosystem.py
 
 import logging
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional, Tuple, TYPE_CHECKING
 from collections import defaultdict
 import pandas as pd
 import numpy as np
+
+if TYPE_CHECKING:
+    from analysis.data_loader import Paper
 
 logger = logging.getLogger(__name__)
 
@@ -12,16 +15,18 @@ logger = logging.getLogger(__name__)
 class VocabularyTimeline:
     """词汇时间轴 - 追踪技术词汇从"首次出现"到"全面扩散"的演变"""
 
-    def __init__(self, min_count: int = 10):
+    def __init__(self, min_count: int = 10, min_total_count: int = 50):
         """
         Args:
             min_count: 最小年度词频阈值，用于判断"集中出现"
+            min_total_count: 最小总词频阈值，用于过滤太低频的词
         """
         self.min_count = min_count
+        self.min_total_count = min_total_count
 
     def analyze(
         self,
-        papers: List,  # List[Paper] from data_loader
+        papers: List["Paper"],
         top_n: int = 1000
     ) -> pd.DataFrame:
         """
@@ -41,9 +46,12 @@ class VocabularyTimeline:
         for paper in papers:
             if not paper.has_abstract:
                 continue
-            text = (paper.title + " " + paper.abstract).lower()
+            text = (paper.title + " " + (paper.abstract or "")).lower()
             year = paper.year
             conf = paper.venue
+
+            if conf is None:
+                continue
 
             # 简单分词（后续可用 NgramExtractor 增强）
             words = text.split()
@@ -59,7 +67,7 @@ class VocabularyTimeline:
                 for year, count in years.items():
                     yearly_total[year] += count
 
-            if sum(yearly_total.values()) < top_n:
+            if sum(yearly_total.values()) < self.min_total_count:
                 continue  # 跳过太低频的词
 
             # 计算各项指标
