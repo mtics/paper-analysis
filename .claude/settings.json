@@ -49,7 +49,11 @@
       "Bash(python -m analysis full --years 2023,2024,2025 --domains \"AI Agent\" --output output)",
       "Bash(pip install matplotlib seaborn)",
       "Bash(pip install pyvis)",
-      "Read(//e/One/Workspace/CodeDrive - UTS/Research/ccf-analysis/analysis/**)"
+      "Read(//e/One/Workspace/CodeDrive - UTS/Research/ccf-analysis/analysis/**)",
+      "Bash(gh search repos \"paper analysis visualization\" --limit 20 --sort stars)",
+      "Bash(python -c \"import json,sys; data=json.load\\(sys.stdin\\); [print\\(f\"\"{r[''full_name'']} \\({r[''stargazers_count'']} stars\\)\"\"\\) for r in data.get\\(''items'',[]\\)]\")",
+      "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(f\"\"Description: {d.get\\(''description''\\)}\"\"\\)\")",
+      "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(f\"\"Description: {d.get\\(''description''\\)}\"\"\\); print\\(f\"\"Topics: {d.get\\(''topics''\\)}\"\"\\)\")"
     ],
     "additionalDirectories": [
       "\\tmp"

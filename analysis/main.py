@@ -678,6 +678,58 @@ def full_analysis(args):
     results['top_keywords'] = keyword_trends['keyword_total']
     results['emerging_keywords'] = keyword_trends['emerging_keywords']
 
+    # Collect yearly keyword data for trend visualization
+    # Extract from vocabulary timeline results instead of individual papers
+    yearly_keyword_data = {}
+
+    # Get keyword frequencies per year from vocabulary analysis
+    if 'vocabulary_timeline' in results and results['vocabulary_timeline']:
+        vocab_data = results['vocabulary_timeline']
+        # Group by first_year appearance
+        yearly_counts = {}
+        for item in vocab_data:
+            phrase = item.get('phrase', '')
+            first_year = item.get('first_year')
+            trajectory = item.get('trajectory', 'stable')
+
+            if first_year and phrase:
+                if first_year not in yearly_counts:
+                    yearly_counts[first_year] = {}
+                # Get total papers with this phrase
+                yearly_counts[first_year][phrase] = trajectory
+
+        yearly_keyword_data = yearly_counts
+
+    # Also track using paper title keywords if vocabulary is empty
+    if not yearly_keyword_data or all(len(v) == 0 for v in yearly_keyword_data.values()):
+        import re
+        from collections import Counter as KwCounter
+
+        yearly_kw_counter = {year: KwCounter() for year in years}
+
+        # Common stopwords to filter
+        stopwords = {'the', 'and', 'for', 'with', 'from', 'that', 'this', 'are', 'have', 'has',
+                     'been', 'were', 'using', 'based', 'approach', 'method', 'system', 'paper',
+                     'show', 'shows', 'presented', 'proposed', 'new', 'novel', 'use', 'using'}
+
+        for paper in papers:
+            year = paper.year
+            if year not in yearly_kw_counter:
+                continue
+
+            # Extract from title
+            title = getattr(paper, 'title', '') or ''
+            words = re.findall(r'\b[a-z]{4,}\b', title.lower())
+            words = [w for w in words if w not in stopwords]
+
+            for word in words:
+                yearly_kw_counter[year][word] += 1
+
+        # Convert to dict
+        yearly_keyword_data = {y: dict(counter) for y, counter in yearly_kw_counter.items()}
+
+    results['yearly_keyword_data'] = yearly_keyword_data
+
     # 3. Ecosystem Analysis
     print("\n" + "-" * 70)
     print("🌐 第三部分：生态系统分析")

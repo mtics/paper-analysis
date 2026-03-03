@@ -106,8 +106,55 @@ class DashboardGenerator:
                 if path:
                     chart_files['venue_year_heatmap'] = path.name
 
-            # Domain lifecycle charts
-            domain_analysis = results.get('domain_analysis', {})
+            # ================================================
+            # 洞见可视化 (Insight-Generating Visualizations)
+            # ================================================
+
+            # 1. 关键词共现网络
+            if papers:
+                path = charts.plot_keyword_cooccurrence(papers, top_n=50)
+                if path:
+                    chart_files['keyword_cooccurrence'] = path.name
+
+            # 2. 关键词消长对比图
+            yearly_kw = results.get('yearly_keyword_data', {})
+            if yearly_kw and len(yearly_kw) >= 2:
+                # Get top keywords from domain analysis
+                top_kw_list = []
+                for domain, data in domain_analysis.items():
+                    if 'top_keywords' in data:
+                        for kw, _ in data['top_keywords'][:30]:
+                            top_kw_list.append(kw)
+
+                path = charts.plot_keyword_trend_comparison(yearly_kw, top_kw_list)
+                if path:
+                    chart_files['keyword_trend_comparison'] = path.name
+
+            # 3. 新兴关键词检测
+            if yearly_kw and len(yearly_kw) >= 2:
+                path = charts.plot_emerging_keywords(yearly_kw, min_growth=30)
+                if path:
+                    chart_files['emerging_keywords'] = path.name
+
+            # 4. 会议相似度网络
+            if papers:
+                path = charts.plot_conference_similarity(papers)
+                if path:
+                    chart_files['conference_similarity'] = path.name
+
+            # 5. 研究主题雷达图
+            for domain, data in domain_analysis.items():
+                path = charts.plot_topic_radar({domain: data}, output_name=f"radar_{domain.replace(' ', '_')[:15]}")
+                if path:
+                    chart_files[f'radar_{domain}'] = path.name
+
+            # 6. IPA四象限分析
+            if yearly_kw and len(yearly_kw) >= 2:
+                path = charts.plot_ipa_quadrant(yearly_kw)
+                if path:
+                    chart_files['ipa_quadrant'] = path.name
+
+            # 传统 Domain lifecycle charts (保留)
             for domain, data in domain_analysis.items():
                 if 'lifecycle' in data and 'yearly_trends' in data:
                     path = charts.plot_lifecycle_scurve(
