@@ -1,0 +1,37 @@
+# CCF-A Paper Analysis — Dependencies
+# Install: pip install -r requirements.txt
+
+# ── Core scientific stack ──────────────────────────────────────────────────
+numpy>=1.24.0
+pandas>=2.0.0
+scipy>=1.11.0
+
+# ── Machine learning ──────────────────────────────────────────────────────
+scikit-learn>=1.3.0
+
+# ── NLP & phrase extraction ───────────────────────────────────────────────
+gensim>=4.3.0          # N-gram / Phrases model (NPMI)
+nltk>=3.8.0            # Tokenization, stopwords
+
+# ── Statistical tests ─────────────────────────────────────────────────────
+pymannkendall>=1.4.3   # Mann-Kendall non-parametric trend test
+
+# ── Network analysis ──────────────────────────────────────────────────────
+networkx>=3.2.0        # Graph construction, centrality, community detection
+
+# ── Semantic embeddings (optional, requires ~2 GB download) ───────────────
+sentence-transformers>=2.2.0   # allenai-specter / all-MiniLM-L6-v2
+
+# ── Optional: advanced topic modeling (requires GPU recommended) ──────────
+# bertopic>=0.16.0
+# keybert>=0.8.0
+
+# ── Optional: advanced community detection ───────────────────────────────
+# cdlib>=0.3.0          # Leiden algorithm (better than Louvain for large graphs)
+
+# ── Optional: interactive network visualization ───────────────────────────
+# pyvis>=0.3.2          # NetworkX → interactive HTML via vis.js
+
+# ── Optional: academic data enrichment ───────────────────────────────────
+# pyalex>=0.13          # OpenAlex API (citation counts, h-index)
+# semanticscholar>=0.8.0 # Semantic Scholar API
