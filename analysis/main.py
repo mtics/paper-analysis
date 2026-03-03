@@ -15,6 +15,8 @@ import argparse
 import json
 import logging
 from pathlib import Path
+from collections import Counter
+import networkx as nx
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -56,28 +58,45 @@ def show_statistics(args):
     loader = PaperDataLoader(args.data_dir)
     stats = loader.get_statistics()
 
+    # Conference category mapping
+    CONF_CATEGORIES = {
+        'aaai': 'AI',
+        'ijcai': 'AI',
+        'nips': 'AI/ML',
+        'iclr': 'AI/ML',
+        'icml': 'AI/ML',
+        'acl': 'NLP',
+        'cvpr': 'Computer Vision',
+        'iccv': 'Computer Vision',
+        'kdd': 'Data Mining',
+        'sigir': 'Information Retrieval',
+        'sigmod': 'Database',
+        'icde': 'Database',
+        'mm': 'Multimedia',
+    }
+
     # Overall summary
     total_papers = stats['total_papers']
     total_with_abstract = stats['papers_with_abstract']
     coverage_rate = total_with_abstract / total_papers * 100 if total_papers > 0 else 0
 
-    print("\n" + "=" * 70)
-    print("                     CCF-A 会议论文统计概览")
-    print("=" * 70)
+    print("\n" + "=" * 85)
+    print("                              CCF-A 会议论文统计概览")
+    print("=" * 85)
 
     # Summary table
     print(f"\n{'📊 总体统计':<20}")
-    print("-" * 50)
-    print(f"  {'会议数量:':<18} {stats['total_conferences']}")
-    print(f"  {'论文总数:':<18} {total_papers:,}")
-    print(f"  {'有摘要论文:':<18} {total_with_abstract:,}")
-    print(f"  {'完整率:':<18} {coverage_rate:.1f}%")
+    print("-" * 60)
+    print(f"  {'会议数量:':<20} {stats['total_conferences']}")
+    print(f"  {'论文总数:':<20} {total_papers:,}")
+    print(f"  {'有摘要论文:':<20} {total_with_abstract:,}")
+    print(f"  {'完整率:':<20} {coverage_rate:.1f}%")
 
     # Conference table
     print(f"\n{'📚 各会议详情':<20}")
-    print("-" * 70)
-    print(f"  {'会议':<10} {'论文数':>10} {'有摘要':>10} {'完整率':>10} {'年份范围':>15}")
-    print("  " + "-" * 66)
+    print("-" * 85)
+    print(f"  {'会议':<8} {'类别':<16} {'论文数':>10} {'有摘要':>10} {'完整率':>10} {'年份范围':>15}")
+    print("  " + "-" * 81)
 
     # Sort by paper count
     sorted_confs = sorted(
@@ -96,12 +115,13 @@ def show_statistics(args):
         else:
             year_str = str(year_range)
 
-        print(f"  {conf.upper():<10} {papers:>10,} {with_abstract:>10,} {rate:>9.1f}% {year_str:>15}")
+        category = CONF_CATEGORIES.get(conf.lower(), 'Other')
+        print(f"  {conf.upper():<8} {category:<16} {papers:>10,} {with_abstract:>10,} {rate:>9.1f}% {year_str:>15}")
 
-    print("  " + "-" * 66)
-    total_row = f"  {'总计':<10} {total_papers:>10,} {total_with_abstract:>10,} {coverage_rate:>9.1f}% {'-':>15}"
+    print("  " + "-" * 81)
+    total_row = f"  {'总计':<8} {'-':<16} {total_papers:>10,} {total_with_abstract:>10,} {coverage_rate:>9.1f}% {'-':>15}"
     print(total_row)
-    print("=" * 70)
+    print("=" * 85)
 
 
 def analyze_conference(args):
@@ -532,6 +552,264 @@ def network_mode(args):
         print(f"\nSaved to: {output_mgr.base_dir}")
 
 
+def full_analysis(args):
+    """
+    Run comprehensive full analysis pipeline.
+    Executes all analyses in one go: trends, ecosystem, network, and deep domain.
+    """
+    from datetime import datetime
+
+    # Setup output
+    if args.output:
+        output_path = Path(args.output)
+    else:
+        output_path = Path(__file__).parent.parent.parent / "output" / "analysis"
+    output_path.mkdir(parents=True, exist_ok=True)
+    output_mgr = OutputManager(output_path)
+
+    # Parse conferences
+    conferences = None
+    if args.conferences:
+        conferences = [c.strip() for c in args.conferences.split(',')]
+
+    years = args.years
+
+    print("\n" + "=" * 70)
+    print("                    CCF-A 全流程深度分析")
+    print("=" * 70)
+    print(f"\n📅 分析年份: {min(years)} - {max(years)}")
+    print(f"📚 分析会议: {', '.join(conferences) if conferences else '全部 CCF-A'}")
+    print(f"📁 输出目录: {output_path}")
+    print(f"🕐 开始时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print("\n" + "-" * 70)
+
+    # Load papers
+    print("\n📥 加载论文数据...")
+    papers = load_papers_for_analysis(conferences, years)
+    print(f"   已加载 {len(papers):,} 篇论文")
+
+    results = {
+        'analysis_time': datetime.now().isoformat(),
+        'years': years,
+        'conferences': conferences or 'all',
+        'total_papers': len(papers)
+    }
+
+    # 1. Basic Statistics
+    print("\n" + "-" * 70)
+    print("📊 第一部分：基础统计")
+    print("-" * 70)
+
+    # Yearly distribution
+    yearly_dist = Counter(p.year for p in papers)
+    print(f"\n   年度论文分布:")
+    for year in sorted(yearly_dist.keys()):
+        count = yearly_dist[year]
+        bar = "█" * min(count // 100, 50)
+        print(f"   {year}: {count:>5} {bar}")
+
+    results['yearly_distribution'] = dict(sorted(yearly_dist.items()))
+
+    # Venue distribution
+    venue_dist = Counter()
+    for p in papers:
+        venue_dist[p.venue.lower()] += 1
+
+    print(f"\n   会议论文分布 (Top 10):")
+    for venue, count in venue_dist.most_common(10):
+        pct = count / len(papers) * 100
+        print(f"   {venue.upper():<10} {count:>5} ({pct:>5.1f}%)")
+
+    results['venue_distribution'] = dict(venue_dist.most_common(10))
+
+    # 2. Trend Analysis
+    print("\n" + "-" * 70)
+    print("📈 第二部分：趋势分析")
+    print("-" * 70)
+
+    trend_analyzer = TrendAnalyzer()
+    keyword_trends = trend_analyzer.analyze_keyword_trends(papers, top_n=30)
+
+    print(f"\n   高频关键词 (Top 20):")
+    for i, (kw, count) in enumerate(list(keyword_trends['keyword_total'].items())[:20], 1):
+        print(f"   {i:>2}. {kw:<20} {count:>5}")
+
+    print(f"\n   新兴关键词 (增长最快):")
+    for kw, growth in keyword_trends['emerging_keywords'][:10]:
+        print(f"   + {kw:<20} {growth*100:>6.1f}%")
+
+    results['top_keywords'] = dict(list(keyword_trends['keyword_total'].items())[:30])
+    results['emerging_keywords'] = keyword_trends['emerging_keywords'][:20]
+
+    # 3. Ecosystem Analysis
+    print("\n" + "-" * 70)
+    print("🌐 第三部分：生态系统分析")
+    print("-" * 70)
+
+    # Vocabulary timeline
+    vocab_timeline = VocabularyTimeline(min_count=10)
+    vocab_df = vocab_timeline.analyze(papers, top_n=50)
+
+    print(f"\n   热门技术短语 (Top 20):")
+    for i, row in vocab_df.head(20).iterrows():
+        phrase = row['phrase']
+        first_year = row.get('first_year', 'N/A')
+        trend = row.get('trend', 0)
+        trend_str = f"+{trend:.1f}" if trend > 0 else f"{trend:.1f}"
+        print(f"   {i:>2}. {phrase:<25} 首次: {first_year}  趋势: {trend_str}")
+
+    results['vocabulary_timeline'] = vocab_df.to_dict('records')
+
+    # Conference similarity
+    print(f"\n   会议相似度 (Top 5 相似对):")
+    conf_sim = ConferenceSimilarityMatrix()
+    conf_sim.build(papers)
+    sim_matrix = conf_sim.get_similarity_matrix()
+
+    # Get top similar pairs
+    similar_pairs = []
+    for i, conf1 in enumerate(conf_sim.conferences):
+        for j, conf2 in enumerate(conf_sim.conferences):
+            if i < j and sim_matrix is not None:
+                similar_pairs.append((conf1, conf2, sim_matrix[i, j]))
+
+    similar_pairs.sort(key=lambda x: x[2], reverse=True)
+    for conf1, conf2, sim in similar_pairs[:5]:
+        print(f"   {conf1.upper()} ↔ {conf2.upper()}: {sim:.3f}")
+
+    results['conference_similarity'] = {f"{p[0]}-{p[1]}": p[2] for p in similar_pairs[:10]}
+
+    # 4. Network Analysis
+    print("\n" + "-" * 70)
+    print("🔗 第四部分：作者网络分析")
+    print("-" * 70)
+
+    network_analyzer = CoauthorNetworkAnalyzer()
+    G = network_analyzer.build_graph(papers)
+
+    print(f"\n   网络规模:")
+    print(f"     节点数 (作者): {G.number_of_nodes()}")
+    print(f"     边数 (合作关系): {G.number_of_edges()}")
+
+    if G.number_of_nodes() > 0:
+        density = nx.density(G)
+        print(f"     网络密度: {density:.4f}")
+
+        # Find bridge researchers
+        bridges = network_analyzer.find_bridge_researchers(papers, years)
+        print(f"\n   桥接研究者 (跨领域合作最多):")
+        for author, score in bridges[:10]:
+            print(f"   • {author:<30} 桥接分数: {score:.1f}")
+
+        results['network_stats'] = {
+            'nodes': G.number_of_nodes(),
+            'edges': G.number_of_edges(),
+            'density': density if G.number_of_nodes() > 0 else 0,
+            'bridge_researchers': bridges[:20]
+        }
+
+    # 5. Domain Deep Analysis
+    print("\n" + "-" * 70)
+    print("🎯 第五部分：领域深度分析")
+    print("-" * 70)
+
+    # Predefined domains to analyze
+    domains_to_analyze = args.domains.split(',') if args.domains else [
+        'AI Agent', 'Large Language Models', 'Reinforcement Learning',
+        'Computer Vision', 'Graph Neural Networks'
+    ]
+
+    domain_results = {}
+
+    for domain in domains_to_analyze:
+        domain = domain.strip()
+        print(f"\n   分析领域: {domain}")
+
+        try:
+            analyzer = DeepDomainAnalyzer(args.data_dir)
+            report = analyzer.analyze_domain(
+                domain=domain,
+                conferences=conferences,
+                years=years,
+                min_relevance=0.05,
+                top_papers=10
+            )
+
+            # Lifecycle analysis
+            lifecycle = LifecycleAnalyzer()
+            lifecycle_result = lifecycle.fit_scurve(report.yearly_trends)
+
+            print(f"   📄 论文数: {report.total_papers}")
+            print(f"   📈 阶段: {lifecycle_result.get('stage', 'unknown')}")
+
+            # Save domain report
+            domain_report = {
+                'domain': domain,
+                'total_papers': report.total_papers,
+                'yearly_trends': report.yearly_trends,
+                'venue_distribution': report.venue_distribution,
+                'lifecycle': lifecycle_result,
+                'top_keywords': report.top_keywords[:20],
+                'subdomains': {
+                    name: {
+                        'paper_count': sub.paper_count,
+                        'growth_rate': sub.growth_rate
+                    }
+                    for name, sub in report.subdomains.items()
+                },
+                'representative_papers': [
+                    {
+                        'title': p.title[:80],
+                        'year': p.year,
+                        'venue': p.venue
+                    }
+                    for p in report.representative_papers[:5]
+                ]
+            }
+
+            domain_results[domain] = domain_report
+
+        except Exception as e:
+            print(f"   ⚠️ 分析失败: {str(e)[:50]}")
+            domain_results[domain] = {'error': str(e)}
+
+    results['domain_analysis'] = domain_results
+
+    # Save comprehensive report
+    print("\n" + "-" * 70)
+    print("💾 保存分析结果")
+    print("-" * 70)
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    report_file = output_path / "reports" / f"full_analysis_{timestamp}.json"
+
+    # Ensure reports directory exists
+    (output_path / "reports").mkdir(parents=True, exist_ok=True)
+
+    with open(report_file, 'w', encoding='utf-8') as f:
+        json.dump(results, f, indent=2, ensure_ascii=False)
+
+    print(f"\n   完整报告已保存: {report_file}")
+
+    # Also save individual components
+    # Keywords
+    output_mgr.save_json({'keywords': results['top_keywords'], 'emerging': results['emerging_keywords']},
+                         'trends', f'keywords_{timestamp}.json')
+
+    # Vocabulary
+    output_mgr.save_json(results['vocabulary_timeline'][:100], 'ecosystem', f'vocabulary_{timestamp}.json')
+
+    # Network
+    if 'network_stats' in results:
+        output_mgr.save_json(results['network_stats'], 'network', f'network_{timestamp}.json')
+
+    print(f"   各模块报告已保存至: {output_path}")
+
+    print("\n" + "=" * 70)
+    print(f"✅ 全流程分析完成! (耗时: {datetime.now().strftime('%H:%M:%S')})")
+    print("=" * 70)
+
+
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
@@ -638,6 +916,13 @@ Examples:
     ecosystem_parser.add_argument('--conferences', type=str, default=None)
     ecosystem_parser.add_argument('--output', type=str, default=None)
 
+    # Full analysis command - comprehensive one-click analysis
+    full_parser = subparsers.add_parser('full', help='Run comprehensive full analysis (trends + ecosystem + network + deep)')
+    full_parser.add_argument('--years', type=str, default='2015,2025', help='Years to analyze')
+    full_parser.add_argument('--conferences', type=str, default=None, help='Comma-separated conference list (default: all CCF-A)')
+    full_parser.add_argument('--domains', type=str, default=None, help='Comma-separated domains to analyze (default: AI Agent, LLM, RL, CV, GNN)')
+    full_parser.add_argument('--output', type=str, default=None, help='Output directory')
+
     # Network command
     network_parser = subparsers.add_parser('network', help='Analyze coauthor network')
     network_parser.add_argument('--years', type=str, default='2015,2025')
@@ -676,6 +961,8 @@ Examples:
         ecosystem_mode(args)
     elif args.command == 'network':
         network_mode(args)
+    elif args.command == 'full':
+        full_analysis(args)
     else:
         parser.print_help()
 
