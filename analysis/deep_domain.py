@@ -588,7 +588,7 @@ class DeepDomainAnalyzer:
         representative = self._get_representative_papers(papers, top_papers)
 
         # Emerging trends
-        emerging = self._analyze_emerging_topics(papers, list(yearly_counts.keys()))
+        emerging = self._analyze_emerging_topics(papers, sorted(yearly_counts.keys()))
 
         return SubdomainAnalysis(
             name=name,

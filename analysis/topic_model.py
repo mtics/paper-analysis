@@ -361,7 +361,7 @@ class SubtopicAnalyzer:
             # Count keywords
             for word in words:
                 keyword_counter[word] += 1
-                keyword_by_year[word] += 1
+                keyword_by_year[paper.year][word] += 1
 
         # Get top keywords
         top_keywords = [kw for kw, _ in keyword_counter.most_common(self.top_n_keywords)]
