@@ -75,6 +75,9 @@ def show_statistics(args):
         'mm': 'Multimedia',
     }
 
+    # Category order for display
+    CATEGORY_ORDER = ['AI', 'AI/ML', 'NLP', 'Computer Vision', 'Data Mining', 'Information Retrieval', 'Database', 'Multimedia']
+
     # Overall summary
     total_papers = stats['total_papers']
     total_with_abstract = stats['papers_with_abstract']
@@ -92,34 +95,46 @@ def show_statistics(args):
     print(f"  {'有摘要论文:':<20} {total_with_abstract:,}")
     print(f"  {'完整率:':<20} {coverage_rate:.1f}%")
 
-    # Conference table
+    # Conference table - grouped by category
     print(f"\n{'📚 各会议详情':<20}")
     print("-" * 85)
-    print(f"  {'会议':<8} {'类别':<16} {'论文数':>10} {'有摘要':>10} {'完整率':>10} {'年份范围':>15}")
+    print(f"  {'类别':<20} {'会议':<12} {'论文数':>10} {'有摘要':>10} {'完整率':>10} {'年份范围':>15}")
     print("  " + "-" * 81)
 
-    # Sort by paper count
-    sorted_confs = sorted(
-        stats['conferences'].items(),
-        key=lambda x: x[1]['papers'],
-        reverse=True
-    )
-
-    for conf, conf_stats in sorted_confs:
-        papers = conf_stats['papers']
-        with_abstract = conf_stats['with_abstract']
-        rate = with_abstract / papers * 100 if papers > 0 else 0
-        year_range = conf_stats.get('year_range', (0, 0))
-        if isinstance(year_range, tuple):
-            year_str = f"{year_range[0]}-{year_range[1]}"
-        else:
-            year_str = str(year_range)
-
+    # Group conferences by category
+    conf_by_category = {}
+    for conf, conf_stats in stats['conferences'].items():
         category = CONF_CATEGORIES.get(conf.lower(), 'Other')
-        print(f"  {conf.upper():<8} {category:<16} {papers:>10,} {with_abstract:>10,} {rate:>9.1f}% {year_str:>15}")
+        if category not in conf_by_category:
+            conf_by_category[category] = []
+        conf_by_category[category].append((conf, conf_stats))
+
+    # Display by category order
+    for category in CATEGORY_ORDER:
+        if category not in conf_by_category:
+            continue
+
+        confs = sorted(conf_by_category[category], key=lambda x: x[1]['papers'], reverse=True)
+
+        for i, (conf, conf_stats) in enumerate(confs):
+            papers = conf_stats['papers']
+            with_abstract = conf_stats['with_abstract']
+            rate = with_abstract / papers * 100 if papers > 0 else 0
+            year_range = conf_stats.get('year_range', (0, 0))
+            if isinstance(year_range, tuple):
+                year_str = f"{year_range[0]}-{year_range[1]}"
+            else:
+                year_str = str(year_range)
+
+            # Show category only on first row of each group
+            cat_display = category if i == 0 else ""
+            print(f"  {cat_display:<20} {conf.upper():<12} {papers:>10,} {with_abstract:>10,} {rate:>9.1f}% {year_str:>15}")
+
+        # Add blank line after each category group
+        print()
 
     print("  " + "-" * 81)
-    total_row = f"  {'总计':<8} {'-':<16} {total_papers:>10,} {total_with_abstract:>10,} {coverage_rate:>9.1f}% {'-':>15}"
+    total_row = f"  {'总计':<20} {'-':<12} {total_papers:>10,} {total_with_abstract:>10,} {coverage_rate:>9.1f}% {'-':>15}"
     print(total_row)
     print("=" * 85)
 
@@ -663,14 +678,15 @@ def full_analysis(args):
     # Conference similarity
     print(f"\n   会议相似度 (Top 5 相似对):")
     conf_sim = ConferenceSimilarityMatrix()
-    conf_sim.build(papers)
-    sim_matrix = conf_sim.get_similarity_matrix()
+    # Get unique conferences from papers
+    conf_list = list(set(p.venue.lower() for p in papers))
+    sim_matrix, conf_names = conf_sim.compute_similarity(papers, conf_list, years)
 
     # Get top similar pairs
     similar_pairs = []
-    for i, conf1 in enumerate(conf_sim.conferences):
-        for j, conf2 in enumerate(conf_sim.conferences):
-            if i < j and sim_matrix is not None:
+    for i, conf1 in enumerate(conf_names):
+        for j, conf2 in enumerate(conf_names):
+            if i < j:
                 similar_pairs.append((conf1, conf2, sim_matrix[i, j]))
 
     similar_pairs.sort(key=lambda x: x[2], reverse=True)
