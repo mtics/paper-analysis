@@ -15,14 +15,14 @@ logger = logging.getLogger(__name__)
 class VocabularyTimeline:
     """词汇时间轴 - 追踪技术词汇从"首次出现"到"全面扩散"的演变"""
 
-    def __init__(self, min_count: int = 10, min_total_count: int = 50):
+    def __init__(self, min_count: int = 10, min_count_total: int = 50):
         """
         Args:
             min_count: 最小年度词频阈值，用于判断"集中出现"
-            min_total_count: 最小总词频阈值，用于过滤太低频的词
+            min_count_total: 最小总词频阈值，用于过滤太低频的词
         """
         self.min_count = min_count
-        self.min_total_count = min_total_count
+        self.min_total_count = min_count_total
 
     def analyze(
         self,
