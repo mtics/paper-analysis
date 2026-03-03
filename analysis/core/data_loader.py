@@ -100,7 +100,7 @@ class PaperDataLoader:
         """
         if data_dir is None:
             # Default to project data directory
-            root_dir = Path(__file__).parent.parent
+            root_dir = Path(__file__).parent.parent.parent
             data_dir = root_dir / "data" / "paper"
 
         self.data_dir = Path(data_dir)
