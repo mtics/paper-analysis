@@ -30,7 +30,7 @@ sentence-transformers>=2.2.0   # allenai-specter / all-MiniLM-L6-v2
 # cdlib>=0.3.0          # Leiden algorithm (better than Louvain for large graphs)
 
 # ── Optional: interactive network visualization ───────────────────────────
-# pyvis>=0.3.2          # NetworkX → interactive HTML via vis.js
+pyvis>=0.3.2            # NetworkX → interactive HTML via vis.js
 
 # ── Optional: academic data enrichment ───────────────────────────────────
 # pyalex>=0.13          # OpenAlex API (citation counts, h-index)
