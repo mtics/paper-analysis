@@ -44,7 +44,12 @@
       "Bash(deep_domain \")",
       "Bash(python analysis/analyze_vocabulary_temp.py)",
       "Bash(python -m analysis stats)",
-      "Bash(python -m analysis full --years 2024,2025 --domains \"AI Agent\" --output output)"
+      "Bash(python -m analysis full --years 2024,2025 --domains \"AI Agent\" --output output)",
+      "Bash(timeout 120)",
+      "Bash(python -m analysis full --years 2023,2024,2025 --domains \"AI Agent\" --output output)",
+      "Bash(pip install matplotlib seaborn)",
+      "Bash(pip install pyvis)",
+      "Read(//e/One/Workspace/CodeDrive - UTS/Research/ccf-analysis/analysis/**)"
     ],
     "additionalDirectories": [
       "\\tmp"

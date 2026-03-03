@@ -31,3 +31,6 @@ Thumbs.db
 # Output files
 output/
 *.log
+
+# Third-party libraries
+lib/
