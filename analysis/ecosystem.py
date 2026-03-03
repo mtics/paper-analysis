@@ -155,3 +155,123 @@ class VocabularyTimeline:
             result.append(d)
 
         return result
+
+
+class ConferenceSimilarityMatrix:
+    """会议相似度矩阵 - 量化 13 个 CCF-A 顶会的研究重心相似度"""
+
+    def __init__(self, max_features: int = 5000):
+        """
+        Args:
+            max_features: TF-IDF 最大特征数
+        """
+        from sklearn.feature_extraction.text import TfidfVectorizer
+        self.vectorizer = TfidfVectorizer(max_features=max_features, stop_words='english')
+        self.max_features = max_features
+
+    def compute_similarity(
+        self,
+        papers: List,
+        conferences: List[str],
+        years: List[int]
+    ) -> Tuple["np.ndarray", List[str]]:
+        """
+        计算会议相似度矩阵
+
+        Returns:
+            (similarity_matrix, conference_names)
+        """
+        from sklearn.metrics.pairwise import cosine_similarity
+        import numpy as np
+
+        # 按会议聚合论文文本
+        conf_texts = {}
+        for conf in conferences:
+            conf_papers = [p for p in papers if p.venue == conf and p.year in years]
+            texts = []
+            for p in conf_papers:
+                text = p.title
+                if p.has_abstract and p.abstract:
+                    text += " " + p.abstract
+                texts.append(text)
+            conf_texts[conf] = " ".join(texts)
+
+        # 计算 TF-IDF
+        conf_names = [c for c in conferences if c in conf_texts and conf_texts[c]]
+        texts = [conf_texts[c] for c in conf_names]
+
+        if len(texts) < 2:
+            return np.array([[1.0]]), conf_names
+
+        tfidf = self.vectorizer.fit_transform(texts)
+
+        # 计算余弦相似度
+        similarity = cosine_similarity(tfidf)
+
+        return similarity, conf_names
+
+    def compare_eras(
+        self,
+        papers: List,
+        conferences: List[str],
+        era1_years: List[int],
+        era2_years: List[int]
+    ) -> Dict:
+        """
+        比较两个时代的相似度变化
+
+        Args:
+            papers: 论文列表
+            conferences: 会议列表
+            era1_years: 第一个时代年份
+            era2_years: 第二个时代年份
+
+        Returns:
+            {
+                "era1_years": era1_years,
+                "era2_years": era2_years,
+                "similarity_era1": np.ndarray,
+                "similarity_era2": np.ndarray,
+                "delta": np.ndarray,
+                "conference_names": List[str]
+            }
+        """
+        import numpy as np
+
+        # 时代1
+        era1_papers = [p for p in papers if p.year in era1_years]
+        sim1, conf_names = self.compute_similarity(era1_papers, conferences, era1_years)
+
+        # 时代2
+        era2_papers = [p for p in papers if p.year in era2_years]
+        sim2, _ = self.compute_similarity(era2_papers, conferences, era2_years)
+
+        # 差值矩阵
+        delta = sim2 - sim1
+
+        return {
+            "era1_years": era1_years,
+            "era2_years": era2_years,
+            "similarity_era1": sim1.tolist(),
+            "similarity_era2": sim2.tolist(),
+            "delta": delta.tolist(),
+            "conference_names": conf_names
+        }
+
+    def find_converging_pairs(self, result: Dict, top_n: int = 10) -> List[Dict]:
+        """找出融合最快的会议对"""
+        delta = np.array(result["delta"])
+        conf_names = result["conference_names"]
+
+        pairs = []
+        n = len(conf_names)
+        for i in range(n):
+            for j in range(i+1, n):
+                pairs.append({
+                    "conf1": conf_names[i],
+                    "conf2": conf_names[j],
+                    "delta": delta[i][j]
+                })
+
+        pairs.sort(key=lambda x: x["delta"], reverse=True)
+        return pairs[:top_n]
