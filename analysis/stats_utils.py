@@ -1,13 +1,14 @@
 import pymannkendall as mk
-from typing import Dict, List, Tuple, Optional
+from typing import Any, Dict, Literal
 
 
-def mann_kendall_test(yearly_counts: Dict[int, int]) -> Dict:
+def mann_kendall_test(yearly_counts: Dict[int, int], alpha: float = 0.05) -> Dict[str, Any]:
     """
     对年度论文数量进行 Mann-Kendall 趋势检验
 
     Args:
         yearly_counts: {年份: 论文数量}
+        alpha: 显著性水平阈值 (default: 0.05)
 
     Returns:
         {
@@ -37,7 +38,7 @@ def mann_kendall_test(yearly_counts: Dict[int, int]) -> Dict:
     return {
         'trend': result.trend,
         'p_value': result.p,
-        'significant': result.p < 0.05,
+        'significant': result.p < alpha,
         'sens_slope': result.slope,
         'tau': result.Tau
     }
@@ -55,7 +56,9 @@ def normalize_yearly_counts(yearly_counts: Dict[int, int]) -> Dict[int, float]:
     return {y: count / total for y, count in yearly_counts.items()}
 
 
-def calculate_growth_rate(yearly_counts: Dict[int, int], method: str = 'compound') -> float:
+def calculate_growth_rate(
+    yearly_counts: Dict[int, int], method: Literal['compound', 'simple'] = 'compound'
+) -> float:
     """
     计算复合年增长率 (CAGR)
 
@@ -65,7 +68,13 @@ def calculate_growth_rate(yearly_counts: Dict[int, int], method: str = 'compound
 
     Returns:
         年均增长率 (如 0.15 表示 15%)
+
+    Raises:
+        ValueError: 如果 method 不是 'compound' 或 'simple'
     """
+    if method not in ('compound', 'simple'):
+        raise ValueError(f"Invalid method: {method}. Must be 'compound' or 'simple'.")
+
     years = sorted(yearly_counts.keys())
     if len(years) < 2:
         return 0.0
