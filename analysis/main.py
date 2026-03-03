@@ -58,7 +58,7 @@ def show_statistics(args):
     loader = PaperDataLoader(args.data_dir)
     stats = loader.get_statistics()
 
-    # Conference category mapping
+    # Conference category mapping (short names for display)
     CONF_CATEGORIES = {
         'aaai': 'AI',
         'ijcai': 'AI',
@@ -66,17 +66,17 @@ def show_statistics(args):
         'iclr': 'AI/ML',
         'icml': 'AI/ML',
         'acl': 'NLP',
-        'cvpr': 'Computer Vision',
-        'iccv': 'Computer Vision',
-        'kdd': 'Data Mining',
-        'sigir': 'Information Retrieval',
-        'sigmod': 'Database',
-        'icde': 'Database',
-        'mm': 'Multimedia',
+        'cvpr': 'CV',
+        'iccv': 'CV',
+        'kdd': 'DM',
+        'sigir': 'IR',
+        'sigmod': 'DB',
+        'icde': 'DB',
+        'mm': 'MM',
     }
 
     # Category order for display
-    CATEGORY_ORDER = ['AI', 'AI/ML', 'NLP', 'Computer Vision', 'Data Mining', 'Information Retrieval', 'Database', 'Multimedia']
+    CATEGORY_ORDER = ['AI', 'AI/ML', 'NLP', 'CV', 'DM', 'IR', 'DB', 'MM']
 
     # Overall summary
     total_papers = stats['total_papers']
@@ -98,7 +98,7 @@ def show_statistics(args):
     # Conference table - grouped by category
     print(f"\n{'📚 各会议详情':<20}")
     print("-" * 85)
-    print(f"  {'类别':<20} {'会议':<12} {'论文数':>10} {'有摘要':>10} {'完整率':>10} {'年份范围':>15}")
+    print(f"  {'类别':<8} {'会议':<12} {'论文数':>10} {'有摘要':>10} {'完整率':>10} {'年份范围':>15}")
     print("  " + "-" * 81)
 
     # Group conferences by category
@@ -128,13 +128,13 @@ def show_statistics(args):
 
             # Show category only on first row of each group
             cat_display = category if i == 0 else ""
-            print(f"  {cat_display:<20} {conf.upper():<12} {papers:>10,} {with_abstract:>10,} {rate:>9.1f}% {year_str:>15}")
+            print(f"  {cat_display:<8} {conf.upper():<12} {papers:>10,} {with_abstract:>10,} {rate:>9.1f}% {year_str:>15}")
 
         # Add blank line after each category group
         print()
 
     print("  " + "-" * 81)
-    total_row = f"  {'总计':<20} {'-':<12} {total_papers:>10,} {total_with_abstract:>10,} {coverage_rate:>9.1f}% {'-':>15}"
+    total_row = f"  {'总计':<8} {'-':<12} {total_papers:>10,} {total_with_abstract:>10,} {coverage_rate:>9.1f}% {'-':>15}"
     print(total_row)
     print("=" * 85)
 
@@ -675,25 +675,29 @@ def full_analysis(args):
 
     results['vocabulary_timeline'] = vocab_df.to_dict('records')
 
-    # Conference similarity
+    # Conference similarity (skip if too slow)
     print(f"\n   会议相似度 (Top 5 相似对):")
-    conf_sim = ConferenceSimilarityMatrix()
-    # Get unique conferences from papers
-    conf_list = list(set(p.venue.lower() for p in papers))
-    sim_matrix, conf_names = conf_sim.compute_similarity(papers, conf_list, years)
+    try:
+        conf_sim = ConferenceSimilarityMatrix()
+        # Get unique conferences from papers
+        conf_list = list(set(p.venue.lower() for p in papers))
+        sim_matrix, conf_names = conf_sim.compute_similarity(papers, conf_list, years)
 
-    # Get top similar pairs
-    similar_pairs = []
-    for i, conf1 in enumerate(conf_names):
-        for j, conf2 in enumerate(conf_names):
-            if i < j:
-                similar_pairs.append((conf1, conf2, sim_matrix[i, j]))
+        # Get top similar pairs
+        similar_pairs = []
+        for i, conf1 in enumerate(conf_names):
+            for j, conf2 in enumerate(conf_names):
+                if i < j:
+                    similar_pairs.append((conf1, conf2, sim_matrix[i, j]))
 
-    similar_pairs.sort(key=lambda x: x[2], reverse=True)
-    for conf1, conf2, sim in similar_pairs[:5]:
-        print(f"   {conf1.upper()} ↔ {conf2.upper()}: {sim:.3f}")
+        similar_pairs.sort(key=lambda x: x[2], reverse=True)
+        for conf1, conf2, sim in similar_pairs[:5]:
+            print(f"   {conf1.upper()} ↔ {conf2.upper()}: {sim:.3f}")
 
-    results['conference_similarity'] = {f"{p[0]}-{p[1]}": p[2] for p in similar_pairs[:10]}
+        results['conference_similarity'] = {f"{p[0]}-{p[1]}": p[2] for p in similar_pairs[:10]}
+    except Exception as e:
+        print(f"   ⚠️ 会议相似度计算跳过: {str(e)[:50]}")
+        results['conference_similarity'] = {}
 
     # 4. Network Analysis
     print("\n" + "-" * 70)
