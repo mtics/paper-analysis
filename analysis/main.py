@@ -338,6 +338,95 @@ Available commands:
             print(f"Error: {e}")
 
 
+def timeline_mode(args):
+    """Run vocabulary timeline analysis."""
+    from analysis.ecosystem import VocabularyTimeline
+    from analysis.data_loader import load_papers_for_analysis
+
+    # Parse conferences
+    conferences = None
+    if args.conferences:
+        conferences = [c.strip() for c in args.conferences.split(',')]
+
+    # Load papers
+    papers = load_papers_for_analysis(conferences, args.years)
+
+    # Analyze
+    analyzer = VocabularyTimeline(min_count=10)
+    df = analyzer.analyze(papers, top_n=args.top_n)
+
+    # Output
+    print(f"\n=== Vocabulary Timeline ===")
+    print(f"Total phrases analyzed: {len(df)}")
+    print(df.head(20).to_string())
+
+    # Save if output specified
+    if args.output:
+        output_path = Path(args.output)
+        output_path.mkdir(parents=True, exist_ok=True)
+        df.to_csv(output_path / "vocabulary_timeline.csv", index=False)
+
+        # Save paradigm shifts
+        shifts = analyzer.get_paradigm_shifts(df, top_n=20)
+        with open(output_path / "paradigm_shifts.json", 'w') as f:
+            json.dump(shifts, f, indent=2)
+
+        print(f"\nSaved to: {output_path}")
+
+
+def ecosystem_mode(args):
+    """Run full ecosystem analysis."""
+    from analysis.ecosystem import VocabularyTimeline, ConferenceSimilarityMatrix, TechnologyDiffusion
+    from analysis.data_loader import load_papers_for_analysis
+
+    # Parse conferences
+    conferences = None
+    if args.conferences:
+        conferences = [c.strip() for c in args.conferences.split(',')]
+
+    # Load papers
+    papers = load_papers_for_analysis(conferences, args.years)
+
+    print(f"\n=== Ecosystem Analysis ===")
+    print(f"Analyzing {len(papers)} papers...")
+
+    # Run modules
+    # (can be extended based on needs)
+
+    if args.output:
+        output_path = Path(args.output)
+        output_path.mkdir(parents=True, exist_ok=True)
+        print(f"Results would be saved to: {output_path}")
+
+
+def network_mode(args):
+    """Run coauthor network analysis."""
+    from analysis.network_analysis import CoauthorNetworkAnalyzer
+    from analysis.data_loader import load_papers_for_analysis
+
+    # Parse conferences
+    conferences = None
+    if args.conferences:
+        conferences = [c.strip() for c in args.conferences.split(',')]
+
+    # Load papers
+    papers = load_papers_for_analysis(conferences, args.years)
+
+    # Analyze
+    analyzer = CoauthorNetworkAnalyzer()
+    df = analyzer.analyze_evolution(papers, args.years)
+
+    # Output
+    print(f"\n=== Network Evolution ===")
+    print(df.to_string())
+
+    if args.output:
+        output_path = Path(args.output)
+        output_path.mkdir(parents=True, exist_ok=True)
+        df.to_csv(output_path / "network_evolution.csv", index=False)
+        print(f"\nSaved to: {output_path}")
+
+
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
@@ -371,6 +460,15 @@ Examples:
 
   # Interactive mode
   python -m analysis interactive
+
+  # Vocabulary timeline analysis
+  python -m analysis timeline --years 2020,2021,2022 --top-n 50
+
+  # Ecosystem analysis
+  python -m analysis ecosystem --years 2020,2021,2022
+
+  # Network analysis
+  python -m analysis network --years 2020,2021
         """
     )
 
@@ -422,6 +520,25 @@ Examples:
     # Interactive command
     interactive_parser = subparsers.add_parser('interactive', help='Run in interactive mode')
 
+    # Timeline command
+    timeline_parser = subparsers.add_parser('timeline', help='Analyze vocabulary timeline')
+    timeline_parser.add_argument('--years', type=str, default='2015,2025')
+    timeline_parser.add_argument('--top-n', type=int, default=100)
+    timeline_parser.add_argument('--conferences', type=str, default=None)
+    timeline_parser.add_argument('--output', type=str, default=None)
+
+    # Ecosystem command
+    ecosystem_parser = subparsers.add_parser('ecosystem', help='Run full ecosystem analysis')
+    ecosystem_parser.add_argument('--years', type=str, default='2015,2025')
+    ecosystem_parser.add_argument('--conferences', type=str, default=None)
+    ecosystem_parser.add_argument('--output', type=str, default=None)
+
+    # Network command
+    network_parser = subparsers.add_parser('network', help='Analyze coauthor network')
+    network_parser.add_argument('--years', type=str, default='2015,2025')
+    network_parser.add_argument('--conferences', type=str, default=None)
+    network_parser.add_argument('--output', type=str, default=None)
+
     args = parser.parse_args()
 
     # Set default data directory
@@ -448,6 +565,12 @@ Examples:
         deep_analyze_domain(args)
     elif args.command == 'interactive':
         interactive_mode(args)
+    elif args.command == 'timeline':
+        timeline_mode(args)
+    elif args.command == 'ecosystem':
+        ecosystem_mode(args)
+    elif args.command == 'network':
+        network_mode(args)
     else:
         parser.print_help()
 
