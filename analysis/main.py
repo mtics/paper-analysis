@@ -17,7 +17,7 @@ from analysis.data_loader import PaperDataLoader, load_papers_for_analysis
 from analysis.preprocessing import TextPreprocessor
 from analysis.topic_model import DomainClassifier, TopicModeler, SubtopicAnalyzer, classify_papers_by_domain
 from analysis.trend_analysis import TrendAnalyzer, ComparativeAnalyzer, generate_trend_report
-from analysis.deep_domain import DeepDomainAnalyzer, format_report, DOMAIN_DEFINITIONS
+from analysis.deep_domain import DeepDomainAnalyzer, format_report, DOMAIN_DEFINITIONS, analyze_vocabulary_turnover
 
 # Configure logging
 logging.basicConfig(
@@ -213,6 +213,9 @@ def compare_conferences(args):
 
 def deep_analyze_domain(args):
     """Perform deep domain analysis."""
+    # Import lifecycle analyzers here as per task requirements
+    from analysis.lifecycle import LifecycleAnalyzer, ResearcherStabilityAnalyzer
+
     # Show available domains
     if args.list_domains:
         print("\n=== Available Domain Definitions ===")
@@ -248,6 +251,71 @@ def deep_analyze_domain(args):
     # Print formatted report
     print(format_report(report))
 
+    # === Lifecycle Analysis ===
+    # S-curve analysis using yearly trends from report
+    lifecycle = LifecycleAnalyzer()
+    lifecycle_result = lifecycle.fit_scurve(report.yearly_trends)
+
+    # Load papers for researcher stability and vocabulary turnover analysis
+    # Parse conferences for paper loading
+    if conferences is None:
+        conferences = ['aaai', 'nips', 'iclr', 'icml', 'acl', 'cvpr', 'kdd', 'sigir']
+
+    # Load all papers
+    all_papers = load_papers_for_analysis(conferences, args.years)
+
+    # Filter papers by domain relevance (same logic as DeepDomainAnalyzer)
+    classifier = DomainClassifier()
+    domain_papers = []
+    domain_def = analyzer.domain_definitions.get(args.domain)
+    if not domain_def:
+        # Try partial match
+        for defined_domain in analyzer.domain_definitions:
+            if defined_domain.lower() in args.domain.lower() or args.domain.lower() in defined_domain.lower():
+                domain_def = analyzer.domain_definitions[defined_domain]
+                break
+
+    if not domain_def:
+        domain_def = {'keywords': args.domain.split(), 'subdomains': {}}
+
+    keywords = domain_def.get('keywords', [])
+
+    for paper in all_papers:
+        text = paper.title
+        if paper.abstract:
+            text += " " + paper.abstract
+
+        matched, score = analyzer._match_keywords(text, keywords)
+        if score >= args.min_relevance:
+            domain_papers.append(paper)
+
+    # Researcher stability analysis
+    stability_analyzer = ResearcherStabilityAnalyzer()
+    stability_result = stability_analyzer.calculate_stability(domain_papers, args.years)
+
+    # Vocabulary turnover analysis
+    vocab_result = analyze_vocabulary_turnover(domain_papers, args.years)
+
+    # Print lifecycle analysis results
+    print(f"\n=== Lifecycle Analysis ===")
+    print(f"Stage: {lifecycle_result.get('stage', 'unknown')}")
+    if 'L' in lifecycle_result:
+        print(f"Projected ceiling (L): {lifecycle_result['L']:.0f}")
+        print(f"Growth rate (k): {lifecycle_result['k']:.2f}")
+        print(f"R-squared: {lifecycle_result['r_squared']:.3f}")
+
+    print(f"\n=== Researcher Stability ===")
+    print(f"Avg Jaccard: {stability_result.get('avg_jaccard', 0):.3f}")
+    print(f"Stage: {stability_result.get('stage', 'unknown')}")
+
+    print(f"\n=== Rising Keywords ===")
+    for kw in vocab_result.get('rising_keywords', [])[:5]:
+        print(f"  {kw['word']}: +{kw['change']*100:.0f}%")
+
+    print(f"\n=== Declining Keywords ===")
+    for kw in vocab_result.get('declining_keywords', [])[:5]:
+        print(f"  {kw['word']}: {kw['change']*100:.0f}%")
+
     # Save to file if requested
     if args.output:
         output_path = Path(args.output)
@@ -274,7 +342,17 @@ def deep_analyze_domain(args):
             },
             'representative_papers': report.representative_papers,
             'emerging_topics': report.emerging_topics,
-            'insights': report.insights
+            'insights': report.insights,
+            'lifecycle_analysis': {
+                'stage': lifecycle_result.get('stage', 'unknown'),
+                'L': lifecycle_result.get('L'),
+                'k': lifecycle_result.get('k'),
+                'r_squared': lifecycle_result.get('r_squared')
+            },
+            'researcher_stability': {
+                'avg_jaccard': stability_result.get('avg_jaccard', 0),
+                'stage': stability_result.get('stage', 'unknown')
+            }
         }
 
         # Save JSON
