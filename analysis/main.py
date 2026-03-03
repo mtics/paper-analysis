@@ -88,17 +88,17 @@ def show_statistics(args):
     print("=" * 85)
 
     # Summary table
-    print(f"\n{'📊 总体统计':<20}")
+    print(f"\n{'📊 总体统计':<10}")
     print("-" * 60)
-    print(f"  {'会议数量:':<20} {stats['total_conferences']}")
-    print(f"  {'论文总数:':<20} {total_papers:,}")
-    print(f"  {'有摘要论文:':<20} {total_with_abstract:,}")
-    print(f"  {'完整率:':<20} {coverage_rate:.1f}%")
+    print(f"  {'会议数量:':<10} {stats['total_conferences']}")
+    print(f"  {'论文总数:':<10} {total_papers:,}")
+    print(f"  {'有摘要论文:':<10} {total_with_abstract:,}")
+    print(f"  {'完整率:':<10} {coverage_rate:.1f}%")
 
     # Conference table - grouped by category
-    print(f"\n{'📚 各会议详情':<20}")
+    print(f"\n{'📚 各会议详情':<10}")
     print("-" * 85)
-    print(f"  {'类别':<8} {'会议':<12} {'论文数':>10} {'有摘要':>10} {'完整率':>10} {'年份范围':>15}")
+    print(f"  {'类别':<6} {'会议':<6} {'论文数':>6} {'有摘要':>8} {'完整率':>6} {'年份范围':>10}")
     print("  " + "-" * 81)
 
     # Group conferences by category
@@ -128,7 +128,7 @@ def show_statistics(args):
 
             # Show category only on first row of each group
             cat_display = category if i == 0 else ""
-            print(f"  {cat_display:<8} {conf.upper():<12} {papers:>10,} {with_abstract:>10,} {rate:>9.1f}% {year_str:>15}")
+            print(f"  {cat_display:<8} {conf.upper():<12} {papers:>6,} {with_abstract:>8,} {rate:>6.1f}% {year_str:>10}")
 
         # Add blank line after each category group
         print()
@@ -716,9 +716,11 @@ def full_analysis(args):
         print(f"     网络密度: {density:.4f}")
 
         # Find bridge researchers
-        bridges = network_analyzer.find_bridge_researchers(papers, years)
+        bridges = network_analyzer.find_bridge_researchers(G)
         print(f"\n   桥接研究者 (跨领域合作最多):")
-        for author, score in bridges[:10]:
+        for author_info in bridges[:10]:
+            author = author_info.get('name', 'Unknown')
+            score = author_info.get('betweenness', 0)
             print(f"   • {author:<30} 桥接分数: {score:.1f}")
 
         results['network_stats'] = {

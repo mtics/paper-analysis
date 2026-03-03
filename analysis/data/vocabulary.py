@@ -6,12 +6,13 @@ Contains stopwords to filter and synonym mappings to merge.
 # =============================================================================
 # Stopwords - Words to filter out during analysis
 # These are common words that don't carry meaningful research information
+# Based on analysis of 33,436 CCF-A papers (2015-2025)
 # =============================================================================
 
 STOPWORDS = {
     # Common English words
     'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
-    'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'been',
+    'of', 'with', 'by', 'from', 'as', 'is', 'was', 'were', 'been',
     'be', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
     'should', 'may', 'might', 'must', 'shall', 'can', 'need', 'dare', 'ought',
     'used', 'it', 'its', 'this', 'that', 'these', 'those', 'i', 'you', 'he',
@@ -39,13 +40,42 @@ STOPWORDS = {
     'prior', 'earlier', 'recent', 'related', 'various', 'many', 'several',
     'specific', 'general', 'specific', 'particular', 'certain', 'several',
 
-    # Technical but meaningless in analysis
+    # Technical but meaningless in analysis (high frequency from analysis)
     'study', 'studies', 'research', 'analysis', 'analysises', 'problem',
     'problems', 'solution', 'solutions', 'model', 'models', 'system', 'systems',
     'framework', 'frameworks', 'algorithm', 'algorithms', 'technique', 'techniques',
     'task', 'tasks', 'data', 'dataset', 'datasets', 'performance', 'accuracy',
+    'learning', 'training', 'trained', 'test', 'testing', 'tested',
+    'experiments', 'experiment', 'evaluation', 'evaluations',
+    'benchmark', 'benchmarks', 'baseline', 'baselines',
+    'demonstrate', 'demonstrated', 'demonstrates', 'demonstrating',
+    'showed', 'shows', 'demonstrate', 'obtain', 'obtained', 'obtains',
+    'provide', 'provides', 'provided', 'providing',
+    'propose', 'proposed', 'proposes', 'proposing',
+    'address', 'addresses', 'addressed', 'addressing',
+    'introduce', 'introduces', 'introduced', 'introduction',
+    'achieve', 'achieves', 'achieved', 'achieving',
+    'improve', 'improved', 'improving', 'improvement',
+    'outperforms', 'effective', 'efficiency', 'efficient',
+    'significant', 'significantly', 'importance', 'important',
+    'relevant', 'useful', 'valuable', 'useful',
 
-    # Common verbs in papers
+    # Numbers and measurements (too generic)
+    'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine',
+    'ten', 'first', 'second', 'third', 'fourth', 'fifth', 'many', 'much',
+    'less', 'least', 'greater', 'greatest', 'high', 'higher', 'highest',
+    'low', 'lower', 'best', 'better', 'good', 'well', 'bad', 'worse', 'worst',
+    'large', 'larger', 'largest', 'small', 'smaller', 'smallest', 'big',
+    'bigger', 'biggest', 'long', 'longer', 'longest', 'short', 'shorter',
+    'shortest', 'wide', 'wider', 'widest', 'deep', 'deeper', 'deepest',
+
+    # Common adjectives
+    'real', 'true', 'false', 'possible', 'impossible', 'necessary', 'sufficient',
+    'interesting', 'popular', 'common', 'rare', 'unknown', 'available', 'feasible',
+    'practical', 'theoretical', 'empirical', 'experimental', 'quantitative', 'qualitative',
+    'extensive', 'various', 'multiple', 'single', 'specific', 'general',
+
+    # Common verbs
     'can', 'may', 'able', 'allow', 'allows', 'enable', 'enables', 'help',
     'helps', 'make', 'makes', 'made', 'get', 'gets', 'getting', 'got',
     'take', 'takes', 'took', 'taken', 'give', 'gives', 'gave', 'given',
@@ -53,27 +83,11 @@ STOPWORDS = {
     'going', 'goes', 'went', 'come', 'comes', 'came', 'see', 'sees', 'saw',
     'seen', 'know', 'knows', 'knew', 'known', 'think', 'thinks', 'thought',
     'want', 'wants', 'wanted', 'like', 'likes', 'need', 'needs', 'needed',
+    'over', 'across', 'given', 'across',
 
-    # Numbers and measurements
-    'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine',
-    'ten', 'first', 'second', 'third', 'fourth', 'fifth', 'many', 'much',
-    'less', 'least', 'greater', 'greatest', 'high', 'higher', 'highest',
-    'low', 'lower', 'best', 'better', 'good', 'well', 'bad', 'worse', 'worst',
-    'large', 'larger', 'largest', 'small', 'smaller', 'smallest', 'big',
-    ' bigger', 'biggest', 'long', 'longer', 'longest', 'short', 'shorter',
-    'shortest', 'wide', 'wider', 'widest', 'deep', 'deeper', 'deepest',
-
-    # Common adjectives
-    'real', 'true', 'false', 'possible', 'impossible', 'necessary', 'sufficient',
-    'important', 'significant', 'interesting', 'relevant', 'useful', 'valuable',
-    'effective', 'efficient', 'simple', 'complex', 'difficult', 'easy',
-    'fast', 'quick', 'slow', 'cheap', 'expensive', 'popular', 'common',
-    'rare', 'unknown', 'available', 'feasible', 'practical', 'theoretical',
-    'empirical', 'experimental', 'quantitative', 'qualitative',
-
-    # URL fragments and artifacts
+    # URL fragments and artifacts (from paper scraping)
     'https', 'http', 'www', 'com', 'org', 'net', 'edu', 'pdf', 'arxiv',
-    'doi', 'url', 'html', 'htm',
+    'doi', 'url', 'html', 'htm', 'github',
 
     # Single characters and meaningless
     'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
@@ -82,11 +96,23 @@ STOPWORDS = {
     # Common research artifacts
     'table', 'figure', 'fig', 'section', 'chapter', 'page', 'vol', 'issue',
     'conference', 'journal', 'proceedings', 'acm', 'ieee', 'arxiv', 'preprint',
+
+    # Additional high-frequency but uninformative terms from analysis
+    'state', 'art', 'large', 'knowledge', 'image', 'images', 'text', 'graph',
+    'domain', 'human', 'features', 'feature', 'semantic', 'detection',
+    'reasoning', 'representation', 'representations', 'visual', 'classification',
+    'prediction', 'translation', 'recognition', 'optimization', 'inference',
+    'generation', 'generation', 'label', 'labels', 'labeling',
+    'source', 'sources', 'target', 'targets', 'question', 'questions',
+    'user', 'users', 'quality', 'space', 'temporal', 'real', 'world',
+    'level', 'set', 'sets', 'cross', 'context', 'fine', 'scale', 'scales',
+    'address', 'design', 'applications', 'understanding', 'available',
 }
 
 # =============================================================================
 # Synonym mappings - Words to merge during analysis
 # Maps variants to canonical forms
+# Based on bigram analysis of CCF-A papers
 # =============================================================================
 
 SYNONYMS = {
@@ -96,16 +122,22 @@ SYNONYMS = {
     'deep learning': 'deep_learning',
     'deep-learning': 'deep_learning',
     'neural network': 'neural_network',
+    'neural networks': 'neural_network',
     'neural-net': 'neural_network',
     'nn': 'neural_network',
+    'nns': 'neural_network',
 
     # NLP
     'natural language processing': 'nlp',
     'natural-language-processing': 'nlp',
+    'natural language': 'nlp',
     'language model': 'language_model',
+    'language models': 'language_model',
     'language_model': 'language_model',
     'large language model': 'llm',
+    'large language models': 'llm',
     'large-language-model': 'llm',
+    'llm': 'llm',
     'llms': 'llm',
 
     # Computer Vision
@@ -113,6 +145,7 @@ SYNONYMS = {
     'computer-vision': 'computer_vision',
     'cv': 'computer_vision',
     'convolutional neural network': 'cnn',
+    'convolutional neural networks': 'cnn',
     'convolutional neural net': 'cnn',
     'cnn': 'cnn',
     'vision transformer': 'vit',
@@ -122,14 +155,19 @@ SYNONYMS = {
     'reinforcement learning': 'rl',
     'reinforcement-learning': 'rl',
     'rl': 'rl',
+
+    # Deep Reinforcement Learning
     'deep reinforcement learning': 'drl',
+    'deep-reinforcement-learning': 'drl',
     'drl': 'drl',
 
     # Model types
     'generative adversarial network': 'gan',
+    'generative adversarial networks': 'gan',
     'gans': 'gan',
     'vae': 'vae',
     'variational autoencoder': 'vae',
+    'variational autoencoders': 'vae',
     'transformer': 'transformer',
     'transformers': 'transformer',
 
@@ -141,8 +179,15 @@ SYNONYMS = {
     'tested': 'test',
     'validation': 'valid',
     'valid': 'valid',
+    'fine-tuning': 'fine_tune',
+    'fine tuning': 'fine_tune',
+    'fine_tune': 'fine_tune',
+    'pre-training': 'pretrain',
+    'pre training': 'pretrain',
+    'pretrain': 'pretrain',
+    'pre-trained': 'pretrain',
 
-    # Evaluation
+    # Evaluation metrics
     'accuracy': 'accuracy',
     'accuracies': 'accuracy',
     'precision': 'precision',
@@ -160,12 +205,15 @@ SYNONYMS = {
     'benchmark': 'benchmark',
     'benchmarks': 'benchmark',
     'state-of-the-art': 'sota',
+    'state of the art': 'sota',
+    'state_art': 'sota',
     'sota': 'sota',
     'baseline': 'baseline',
     'baselines': 'baseline',
 
     # Graph / Network
     'graph neural network': 'gnn',
+    'graph neural networks': 'gnn',
     'gnn': 'gnn',
     'gnns': 'gnn',
     'graph convolution': 'gc',
@@ -177,16 +225,18 @@ SYNONYMS = {
     'adam': 'adam',
     'adamw': 'adamw',
 
-    # Attention
+    # Attention mechanisms
     'self-attention': 'self_attention',
+    'self attention': 'self_attention',
     'selfattention': 'self_attention',
     'cross-attention': 'cross_attention',
     'cross attention': 'cross_attention',
 
-    # Agent / RL
+    # Multi-agent / RL
     'multi-agent': 'multi_agent',
     'multi agent': 'multi_agent',
     'multiagent': 'multi_agent',
+    'multi agent systems': 'multi_agent',
     'agent': 'agent',
     'agents': 'agent',
 
@@ -210,6 +260,53 @@ SYNONYMS = {
     'word embedding': 'word_embedding',
     'word2vec': 'word2vec',
     'bert': 'bert',
+
+    # Multi-modal
+    'multi-modal': 'multimodal',
+    'multi modal': 'multimodal',
+    'multimodal': 'multimodal',
+    'vision language': 'vision_language',
+    'vision-language': 'vision_language',
+
+    # Domain adaptation
+    'domain adaptation': 'domain_adaptation',
+    'domain-adaptation': 'domain_adaptation',
+
+    # Zero-shot
+    'zero-shot': 'zero_shot',
+    'zero shot': 'zero_shot',
+    'zero_shot': 'zero_shot',
+
+    # Few-shot
+    'few-shot': 'few_shot',
+    'few shot': 'few_shot',
+    'few_shot': 'few_shot',
+
+    # Self-supervised
+    'self-supervised': 'self_supervised',
+    'self supervised': 'self_supervised',
+    'self_supervised': 'self_supervised',
+
+    # Semi-supervised
+    'semi-supervised': 'semi_supervised',
+    'semi supervised': 'semi_supervised',
+    'semi_supervised': 'semi_supervised',
+
+    # Supervised
+    'supervised': 'supervised',
+    'unsupervised': 'unsupervised',
+
+    # Contrastive learning
+    'contrastive learning': 'contrastive_learning',
+    'contrastive-learning': 'contrastive_learning',
+
+    # Question answering
+    'question answering': 'question_answering',
+    'question-answering': 'question_answering',
+
+    # Machine translation
+    'machine translation': 'machine_translation',
+    'machine-translation': 'machine_translation',
 }
 
 # =============================================================================
