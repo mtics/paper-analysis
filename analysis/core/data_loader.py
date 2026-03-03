@@ -121,7 +121,7 @@ class PaperDataLoader:
             'sigmod': 'SIGMOD',
             'icde': 'ICDE',
             'sigir': 'SIGIR',
-            'mm': 'ACM Multimedia',
+            'mm': 'ACM MM',
             'em': 'EMNLP',
             'emnlp': 'EMNLP',
             'naacl': 'NAACL',

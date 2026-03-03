@@ -143,8 +143,19 @@ class DashboardGenerator:
                     chart_files['conference_similarity'] = path.name
 
             # 5. 研究主题雷达图
+            # Domain abbreviation mapping
+            domain_abbr = {
+                'AI Agent': 'AIAgent',
+                'Large Language Models': 'LLM',
+                'Computer Vision': 'CV',
+                'Graph Neural Networks': 'GNN',
+                'Reinforcement Learning': 'RL'
+            }
+
             for domain, data in domain_analysis.items():
-                path = charts.plot_topic_radar({domain: data}, output_name=f"radar_{domain.replace(' ', '_')[:15]}")
+                # Use abbreviation or short name
+                short_name = domain_abbr.get(domain, domain.replace(' ', '')[:12])
+                path = charts.plot_topic_radar({domain: data}, output_name=f"radar_{short_name}")
                 if path:
                     chart_files[f'radar_{domain}'] = path.name
 
@@ -157,10 +168,12 @@ class DashboardGenerator:
             # 传统 Domain lifecycle charts (保留)
             for domain, data in domain_analysis.items():
                 if 'lifecycle' in data and 'yearly_trends' in data:
+                    # Use abbreviation or short name
+                    short_name = domain_abbr.get(domain, domain.replace(' ', '')[:12])
                     path = charts.plot_lifecycle_scurve(
                         data['yearly_trends'],
                         data['lifecycle'],
-                        output_name=f"lifecycle_{domain.replace(' ', '_')[:20]}"
+                        output_name=f"lifecycle_{short_name}"
                     )
                     if path:
                         chart_files[f'lifecycle_{domain}'] = path.name
